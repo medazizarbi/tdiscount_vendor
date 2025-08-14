@@ -32,9 +32,12 @@ TDiscount Vendor est une application mobile conçue spécifiquement pour les ven
 
 ## Architecture
 
-L'application suit une architecture moderne avec :
-- **MVVM Pattern** : Séparation des préoccupations
-- **Provider** : Gestion d'état
+L'application suit une architecture MVVM (Model-View-ViewModel) moderne avec :
+- **Model** : Modèles de données et entités métier
+- **View** : Interfaces utilisateur (Widgets Flutter)
+- **ViewModel** : Logique métier et gestion d'état
+- **Services** : Couche d'accès aux données et appels API
+- **Provider** : Gestion d'état réactive
 - **Widgets personnalisés** : Interface cohérente
 - **Thème adaptatif** : Support du mode sombre
 
@@ -43,15 +46,17 @@ L'application suit une architecture moderne avec :
 - **Flutter** : Framework de développement
 - **Dart** : Langage de programmation
 - **Provider** : Gestion d'état
+- **HTTPS** : Appels API
 - **Material Design** : Design system
 
 ## Structure du Projet
 
 ```
 lib/
-├── models/          # Modèles de données
-├── views/           # Interfaces utilisateur
-├── viewModels/      # Logique métier
+├── models/          # Modèles de données et entités
+├── views/           # Interfaces utilisateur (UI)
+├── viewModels/      # Logique métier et gestion d'état
+├── services/        # Services API et accès aux données
 ├── utils/
 │   ├── constants/   # Constantes (couleurs, themes)
 │   └── widgets/     # Widgets réutilisables
@@ -91,15 +96,25 @@ flutter run
 
 ### Ajout de nouvelles fonctionnalités
 1. Créez les modèles nécessaires dans `models/`
-2. Implémentez la logique dans `viewModels/`
-3. Créez l'interface dans `views/`
-4. Ajoutez les widgets réutilisables dans `utils/widgets/`
+2. Implémentez les services API dans `services/`
+3. Développez la logique métier dans `viewModels/`
+4. Créez l'interface dans `views/`
+5. Ajoutez les widgets réutilisables dans `utils/widgets/`
 
 ### Guidelines de développement
-- Utilisez le pattern MVVM
+- Utilisez le pattern MVVM avec Services
+- Séparez les appels API dans la couche Services
 - Respectez la structure des dossiers
 - Implémentez le support du mode sombre
 - Suivez les conventions de nommage Dart
+- Gérez les erreurs dans les ViewModels
+- Utilisez Provider pour la gestion d'état
+
+### Structure MVVM
+- **Models** : Définissent la structure des données
+- **Services** : Gèrent les appels API et la persistance
+- **ViewModels** : Contiennent la logique métier et l'état
+- **Views** : Affichent l'interface utilisateur
 
 ## Contribution
 
