@@ -43,9 +43,14 @@ class ScreenContainer extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
+                            color: themedColor(
+                              context,
+                              Colors.black,
+                              Colors.white,
+                            ),
                           ),
                         ),
                       ],

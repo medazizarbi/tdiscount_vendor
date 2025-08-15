@@ -28,7 +28,7 @@ class StoreScreen extends StatelessWidget {
           ),
           SliverToBoxAdapter(
             child: ScreenContainer(
-              title: 'My Store',
+              title: 'Store',
               child: Column(
                 children: [
                   // Store header info
