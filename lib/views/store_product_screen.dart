@@ -25,6 +25,7 @@ class StoreProductScreen extends StatelessWidget {
                 },
               ),
             ],
+            showBackButton: true,
             showThemeToggle: true,
             pinned: false,
             floating: true,

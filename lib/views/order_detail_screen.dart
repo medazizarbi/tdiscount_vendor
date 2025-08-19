@@ -118,6 +118,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 },
               ),
             ],
+            showBackButton: true,
             showThemeToggle: true,
             pinned: false,
             floating: true,

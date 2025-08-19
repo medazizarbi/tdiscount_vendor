@@ -52,6 +52,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 },
               ),
             ],
+            showBackButton: true,
             showThemeToggle: true,
             pinned: false,
             floating: true,

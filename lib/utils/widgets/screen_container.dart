@@ -34,26 +34,59 @@ class ScreenContainer extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Title Row
+                  // Title Container with styled background
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 12.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                        horizontal: 16.0, vertical: 16.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0, vertical: 12.0),
+                      decoration: BoxDecoration(
+                        color: themedColor(
+                          context,
+                          TColors.lightContainer,
+                          TColors.carddark,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
                             color: themedColor(
                               context,
-                              Colors.black,
-                              Colors.white,
+                              TColors.black.withOpacity(0.5),
+                              TColors.white.withOpacity(0.3),
+                            ),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                            spreadRadius: 1,
+                          ),
+                        ],
+                        border: Border.all(
+                          color: themedColor(
+                            context,
+                            TColors.borderPrimary,
+                            TColors.darkerGrey,
+                          ),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: themedColor(
+                                context,
+                                TColors.textPrimary,
+                                TColors.textWhite,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   // Content

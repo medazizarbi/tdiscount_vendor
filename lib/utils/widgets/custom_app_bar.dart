@@ -8,6 +8,7 @@ class CustomSliverAppBar extends StatelessWidget {
   final Widget? titleWidget;
   final List<Widget>? actions;
   final bool showThemeToggle;
+  final bool showBackButton;
   final Widget? leading;
   final bool floating;
   final bool pinned;
@@ -20,6 +21,7 @@ class CustomSliverAppBar extends StatelessWidget {
     this.titleWidget,
     this.actions,
     this.showThemeToggle = true,
+    this.showBackButton = false,
     this.leading,
     this.floating = false,
     this.pinned = true,
@@ -39,8 +41,14 @@ class CustomSliverAppBar extends StatelessWidget {
             fit: BoxFit.contain,
           ),
       centerTitle: true,
-      leading: leading,
-      automaticallyImplyLeading: false,
+      leading: leading ??
+          (showBackButton
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back, color: TColors.black),
+                  onPressed: () => Navigator.of(context).pop(),
+                )
+              : null),
+      automaticallyImplyLeading: showBackButton,
       floating: floating,
       pinned: pinned,
       snap: snap,
