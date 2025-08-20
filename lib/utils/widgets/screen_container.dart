@@ -36,9 +36,10 @@ class ScreenContainer extends StatelessWidget {
                 children: [
                   // Title Container with styled background
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 16.0),
+                    padding:
+                        const EdgeInsets.all(8.0), // 8px padding from edges
                     child: Container(
+                      width: double.infinity, // Expand to full width
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20.0, vertical: 12.0),
                       decoration: BoxDecoration(
@@ -69,23 +70,19 @@ class ScreenContainer extends StatelessWidget {
                           width: 1,
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            title,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: themedColor(
-                                context,
-                                TColors.textPrimary,
-                                TColors.textWhite,
-                              ),
+                      child: Center(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: themedColor(
+                              context,
+                              TColors.textPrimary,
+                              TColors.textWhite,
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
