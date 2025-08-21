@@ -6,6 +6,7 @@ import 'utils/widgets/nav_bar.dart';
 import 'views/dashboard_screen.dart';
 import 'views/orders_screen.dart';
 import 'views/store_screen.dart';
+import 'views/login_screen.dart'; // Add this import
 
 // Global key for navigation access
 // ignore: library_private_types_in_public_api
@@ -59,7 +60,7 @@ class MyApp extends StatelessWidget {
             ),
             useMaterial3: true,
           ),
-          home: const MyHomePage(),
+          home: const LoginScreen(), // Changed from MyHomePage to LoginScreen
         );
       },
     );
