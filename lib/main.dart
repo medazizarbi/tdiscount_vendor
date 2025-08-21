@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'provider/theme_provider.dart';
+import 'viewmodels/auth_viewmodel.dart';
 import 'utils/constants/colors.dart';
 import 'utils/widgets/nav_bar.dart';
 import 'views/dashboard_screen.dart';
@@ -12,10 +14,19 @@ import 'views/login_screen.dart'; // Add this import
 // ignore: library_private_types_in_public_api
 final GlobalKey<_MyHomePageState> homePageKey = GlobalKey<_MyHomePageState>();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(
+            create: (context) => AuthViewModel()), // Add this
+      ],
       child: const MyApp(),
     ),
   );

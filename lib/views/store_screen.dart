@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../utils/constants/colors.dart';
 import '../utils/widgets/custom_app_bar.dart';
 import '../utils/widgets/screen_container.dart';
-import 'store_product_screen.dart'; // Add this import
+import '../utils/widgets/show_logout_dialog.dart'; // Add this import
+import 'store_product_screen.dart';
 
 class StoreScreen extends StatelessWidget {
   const StoreScreen({super.key});
@@ -173,7 +174,19 @@ class StoreScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 300), // Extra space for scrolling
+
+                  const SizedBox(height: 20),
+                  TextButton.icon(
+                    onPressed: () {
+                      showLogoutDialog(context); // Use the imported function
+                    },
+                    icon: const Icon(Icons.logout, color: Colors.red),
+                    label: const Text(
+                      'Déconnexion',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),

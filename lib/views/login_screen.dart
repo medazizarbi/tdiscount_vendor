@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../utils/constants/colors.dart';
+import '../viewmodels/auth_viewmodel.dart';
+import '../main.dart';
+import 'register_screen.dart'; // Import the RegisterScreen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,15 +15,14 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
-  bool _isLoading = false;
 
   // Controllers
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -81,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 35),
 
-                    // Username Field
+                    // Email Field (changed from username)
                     Container(
                       width: 320,
                       decoration: BoxDecoration(
@@ -101,20 +104,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       child: TextFormField(
-                        key: const Key('vendor_login_username'),
-                        controller: _usernameController,
+                        key: const Key('vendor_login_email'),
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
                         style: TextStyle(
                           color: themedColor(
                               context, TColors.textPrimary, TColors.textWhite),
                         ),
                         decoration: InputDecoration(
-                          labelText: 'Nom d\'utilisateur*',
+                          labelText: 'Email*',
                           labelStyle: TextStyle(
                             color: themedColor(context, TColors.textSecondary,
                                 TColors.darkGrey),
                           ),
                           prefixIcon: const Icon(
-                            Icons.person_outline,
+                            Icons.email_outlined,
                             color: TColors.primary,
                           ),
                           border: OutlineInputBorder(
@@ -130,7 +134,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Veuillez entrer votre nom d\'utilisateur';
+                            return 'Veuillez entrer votre email';
+                          }
+                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                              .hasMatch(value)) {
+                            return 'Veuillez entrer un email valide';
                           }
                           return null;
                         },
@@ -212,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 30),
 
-                    // Login Button
+                    // Login Button with Consumer
                     Container(
                       width: 320,
                       decoration: BoxDecoration(
@@ -225,74 +233,100 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      child: ElevatedButton(
-                        key: const Key('vendor_login_submit'),
-                        onPressed: _isLoading
-                            ? null
-                            : () async {
-                                if (_formKey.currentState?.validate() ??
-                                    false) {
-                                  setState(() {
-                                    _isLoading = true;
-                                  });
-
-                                  // Simulate login process
-                                  await Future.delayed(
-                                      const Duration(seconds: 2));
-
-                                  setState(() {
-                                    _isLoading = false;
-                                  });
-
-                                  // Show success message for now
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text(
-                                            'Login functionality will be implemented with ViewModel'),
-                                        backgroundColor: TColors.info,
-                                        behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _isLoading
-                              ? TColors.buttonDisabled
-                              : TColors.primary,
-                          foregroundColor: TColors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      TColors.black),
-                                ),
-                              )
-                            : const Text(
-                                'Se Connecter',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      child: Consumer<AuthViewModel>(
+                        builder: (context, authViewModel, child) {
+                          return ElevatedButton(
+                            key: const Key('vendor_login_submit'),
+                            onPressed: authViewModel.isLoading
+                                ? null
+                                : () => _handleLogin(context, authViewModel),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: authViewModel.isLoading
+                                  ? TColors.buttonDisabled
+                                  : TColors.primary,
+                              foregroundColor: TColors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
                               ),
+                              elevation: 0,
+                            ),
+                            child: authViewModel.isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          TColors.black),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Se Connecter',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          );
+                        },
                       ),
                     ),
 
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 20),
+
+                    // Error Message Display
+                    Consumer<AuthViewModel>(
+                      builder: (context, authViewModel, child) {
+                        if (authViewModel.errorMessage != null) {
+                          return Container(
+                            width: 320,
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color: TColors.error.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: TColors.error.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: TColors.error,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    authViewModel.errorMessage!,
+                                    style: const TextStyle(
+                                      color: TColors.error,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: TColors.error,
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    // Clear error message
+                                    Provider.of<AuthViewModel>(context,
+                                            listen: false)
+                                        .clearError();
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
 
                     // Forgot Password
                     GestureDetector(
@@ -366,16 +400,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            // Navigate to sign-up screen (to be implemented)
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                    'Sign up screen to be implemented'),
-                                backgroundColor: TColors.info,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const RegisterScreen(),
                               ),
                             );
                           },
@@ -398,5 +425,32 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  // Handle login logic
+  Future<void> _handleLogin(
+      BuildContext context, AuthViewModel authViewModel) async {
+    // Validate form
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    // Get email and password
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    // Call login method from ViewModel
+    final success = await authViewModel.login(email, password);
+
+    // Handle result
+    if (success && mounted) {
+      // Login successful - navigate to main app
+      Navigator.of(this.context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const MyHomePage(),
+        ),
+      );
+    }
+    // Error handling is done by the Consumer widget displaying authViewModel.errorMessage
   }
 }
