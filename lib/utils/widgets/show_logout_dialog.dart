@@ -47,8 +47,6 @@ Future<void> showLogoutDialog(BuildContext context) async {
                   await Provider.of<AuthViewModel>(context, listen: false)
                       .logout();
 
-              print('Logout success: $success');
-
               // Close loading dialog first
               if (context.mounted) {
                 Navigator.of(context).pop(); // Close loading dialog
@@ -79,8 +77,6 @@ Future<void> showLogoutDialog(BuildContext context) async {
                 }
               }
             } catch (e) {
-              print('Logout error: $e');
-
               // Close loading dialog
               if (context.mounted) {
                 Navigator.of(context).pop(); // Close loading dialog

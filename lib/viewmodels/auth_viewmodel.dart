@@ -78,15 +78,12 @@ class AuthViewModel extends ChangeNotifier {
   /// Logout method - handles clearing local data only
   Future<bool> logout() async {
     try {
-      print('🚪 Starting logout process in ViewModel...');
-
       _isLoading = true;
       notifyListeners();
 
       // Clear all data from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
 
-      print('🗑️ Clearing all authentication data...');
       await prefs.remove('token');
       await prefs.remove('vendor_id');
       await prefs.remove('vendor_name');
@@ -98,12 +95,9 @@ class AuthViewModel extends ChangeNotifier {
       _isAuthenticated = false;
       _errorMessage = null;
 
-      print('✅ Logout successful - all data cleared');
-
       notifyListeners();
       return true;
     } catch (e) {
-      print('🚨 Error during logout: $e');
       _errorMessage = 'Logout failed: ${e.toString()}';
       notifyListeners();
       return false;
@@ -111,5 +105,70 @@ class AuthViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Check authentication status on app start
+  Future<void> checkAuthStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      _isAuthenticated = prefs.getBool('is_authenticated') ?? false;
+      
+      notifyListeners();
+    } catch (e) {
+      _isAuthenticated = false;
+      notifyListeners();
+    }
+  }
+
+  /// Get vendor data from SharedPreferences
+  Future<Map<String, dynamic>?> getVendorData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      final vendorId = prefs.getString('vendor_id');
+      final vendorName = prefs.getString('vendor_name');
+      final vendorEmail = prefs.getString('vendor_email');
+      final vendorStatus = prefs.getString('vendor_status');
+
+      if (vendorId != null && vendorName != null && vendorEmail != null) {
+        return {
+          'id': vendorId,
+          'name': vendorName,
+          'email': vendorEmail,
+          'status': vendorStatus ?? 'active',
+        };
+      }
+      
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Get stored token
+  Future<String?> getToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('token');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Convenient getters for vendor info
+  Future<String?> get vendorName async {
+    final vendorData = await getVendorData();
+    return vendorData?['name'];
+  }
+
+  Future<String?> get vendorEmail async {
+    final vendorData = await getVendorData();
+    return vendorData?['email'];
+  }
+
+  Future<String?> get vendorId async {
+    final vendorData = await getVendorData();
+    return vendorData?['id'];
   }
 }

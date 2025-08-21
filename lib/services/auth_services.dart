@@ -37,6 +37,9 @@ class AuthService {
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Store login data on successful login
+        await _storeLoginData(responseData);
+
         // Success
         return {
           'success': true,
@@ -83,9 +86,9 @@ class AuthService {
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Success
-        await _storeRegistrationData(
-            responseData); // Store data on successful registration
+        // Store data on successful registration
+        await _storeRegistrationData(responseData);
+
         return {
           'success': true,
           'data': responseData,
@@ -111,26 +114,20 @@ class AuthService {
     }
   }
 
-  // Helper method to store registration data in SharedPreferences
-  Future<void> _storeRegistrationData(Map<String, dynamic> responseData) async {
+  // Helper method to store login data in SharedPreferences
+  Future<void> _storeLoginData(Map<String, dynamic> responseData) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      print('📂 SharedPreferences instance obtained for registration');
 
-      // The server response has a nested structure: response.data.token and response.data.vendor
-      final data = responseData['data'] ??
-          responseData; // Handle both nested and flat structures
-      print('🔍 Extracted data object: $data');
+      // Handle nested structure - check if there's a 'data' object
+      final data = responseData['data'] ?? responseData;
 
       // Extract and store token from the data object
       final token = data['token'] ?? '';
-      print('🔑 Registration token to store: $token');
       await prefs.setString('token', token);
-      print('✅ Registration token stored successfully');
 
       // Extract and store vendor data from the data object
       final vendor = data['vendor'];
-      print('👤 Registration vendor data to store: $vendor');
 
       if (vendor != null) {
         final vendorId = vendor['id'] ?? '';
@@ -138,42 +135,106 @@ class AuthService {
         final vendorEmail = vendor['email'] ?? '';
         final vendorStatus = vendor['status'] ?? '';
 
-        print('🆔 Registration Vendor ID: $vendorId');
-        print('👤 Registration Vendor Name: $vendorName');
-        print('📧 Registration Vendor Email: $vendorEmail');
-        print('🟢 Registration Vendor Status: $vendorStatus');
+        await prefs.setString('vendor_id', vendorId);
+        await prefs.setString('vendor_name', vendorName);
+        await prefs.setString('vendor_email', vendorEmail);
+        await prefs.setString('vendor_status', vendorStatus);
+        await prefs.setBool('is_authenticated', true);
+      }
+    } catch (e) {
+      // Handle storage error silently or log to crash reporting service
+    }
+  }
+
+  // Helper method to store registration data in SharedPreferences
+  Future<void> _storeRegistrationData(Map<String, dynamic> responseData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // The server response has a nested structure: response.data.token and response.data.vendor
+      final data = responseData['data'] ?? responseData;
+
+      // Extract and store token from the data object
+      final token = data['token'] ?? '';
+      await prefs.setString('token', token);
+
+      // Extract and store vendor data from the data object
+      final vendor = data['vendor'];
+
+      if (vendor != null) {
+        final vendorId = vendor['id'] ?? '';
+        final vendorName = vendor['name'] ?? '';
+        final vendorEmail = vendor['email'] ?? '';
+        final vendorStatus = vendor['status'] ?? '';
 
         await prefs.setString('vendor_id', vendorId);
         await prefs.setString('vendor_name', vendorName);
         await prefs.setString('vendor_email', vendorEmail);
         await prefs.setString('vendor_status', vendorStatus);
         await prefs.setBool('is_authenticated', true);
-
-        print('✅ All registration vendor data stored successfully');
-      } else {
-        print('⚠️ No vendor data found in registration response');
       }
-
-      // Verify registration data was stored correctly
-      print('🔍 Verifying stored registration data...');
-      // await _verifyStoredRegistrationData();
     } catch (e) {
-      print('🚨 Error storing registration data: $e');
-      print('📍 Registration storage error type: ${e.runtimeType}');
+      // Handle storage error silently or log to crash reporting service
     }
   }
 
-  // Helper method to check if user is authenticated (optional)
+  // Helper method to check if user is authenticated
   Future<bool> isAuthenticated() async {
-    // You can implement token validation logic here
-    // For now, just return false
-    return false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool('is_authenticated') ?? false;
+    } catch (e) {
+      return false;
+    }
   }
 
-  // Logout method (optional)
+  // Get stored vendor data
+  Future<Map<String, dynamic>?> getVendorData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final vendorId = prefs.getString('vendor_id');
+      final vendorName = prefs.getString('vendor_name');
+      final vendorEmail = prefs.getString('vendor_email');
+      final vendorStatus = prefs.getString('vendor_status');
+
+      if (vendorId != null && vendorName != null && vendorEmail != null) {
+        return {
+          'id': vendorId,
+          'name': vendorName,
+          'email': vendorEmail,
+          'status': vendorStatus ?? 'active',
+        };
+      }
+
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get stored token
+  Future<String?> getToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('token');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Logout method
   Future<Map<String, dynamic>> logout() async {
     try {
-      // Clear any stored tokens/user data here
+      final prefs = await SharedPreferences.getInstance();
+
+      await prefs.remove('token');
+      await prefs.remove('vendor_id');
+      await prefs.remove('vendor_name');
+      await prefs.remove('vendor_email');
+      await prefs.remove('vendor_status');
+      await prefs.setBool('is_authenticated', false);
+
       return {
         'success': true,
         'message': 'Logged out successfully',
