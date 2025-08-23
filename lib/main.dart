@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Add this import
+import 'package:tdiscount_vendor/viewmodels/store_viewmodel.dart';
 import 'provider/theme_provider.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'utils/constants/colors.dart';
@@ -8,7 +10,7 @@ import 'utils/widgets/nav_bar.dart';
 import 'views/dashboard_screen.dart';
 import 'views/orders_screen.dart';
 import 'views/store_screen.dart';
-import 'views/login_screen.dart'; // Add this import
+import 'views/login_screen.dart';
 
 // Global key for navigation access
 // ignore: library_private_types_in_public_api
@@ -20,20 +22,26 @@ void main() async {
   // Load environment variables
   await dotenv.load(fileName: ".env");
 
+  // Check if user is logged in
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+  final isLoggedIn = token != null && token.isNotEmpty;
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(
-            create: (context) => AuthViewModel()), // Add this
+        ChangeNotifierProvider(create: (context) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => StoreViewModel()),
       ],
-      child: const MyApp(),
+      child: MyApp(isLoggedIn: isLoggedIn),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +79,8 @@ class MyApp extends StatelessWidget {
             ),
             useMaterial3: true,
           ),
-          home: const LoginScreen(), // Changed from MyHomePage to LoginScreen
+          // Navigate based on login status
+          home: isLoggedIn ? const MyHomePage() : const LoginScreen(),
         );
       },
     );
@@ -85,20 +94,37 @@ class MyHomePage extends StatefulWidget {
   // ignore: library_private_types_in_public_api
   _MyHomePageState createState() => _MyHomePageState();
 
-  // Expose a method to navigate to specific screen
   static void navigateTo(int index) {
     homePageKey.currentState?.onItemTapped(index);
   }
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _selectedIndex = 1; // Start with Dashboard
+  int _selectedIndex = 2; // Start with Dashboard
 
   final List<Widget> _pages = const [
     DashboardScreen(),
     OrdersScreen(),
     StoreScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize auth and store state when homepage loads
+    _initializeState();
+  }
+
+  Future<void> _initializeState() async {
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+    final storeViewModel = Provider.of<StoreViewModel>(context, listen: false);
+
+    // Set authentication state
+    await authViewModel.checkAuthStatus();
+
+    // Initialize store state
+    await storeViewModel.initializeStoreState();
+  }
 
   void onItemTapped(int index) {
     setState(() {

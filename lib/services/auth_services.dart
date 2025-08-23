@@ -2,8 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'store_services.dart'; // Add this import
 
 class AuthService {
+  // Add StoreService instance
+  final StoreService _storeService = StoreService();
+
   // Get base URL from .env
   static String get baseUrl => dotenv.env['BASE_URL']!;
   static String get loginEndpoint => dotenv.env['LOGIN_ENDPOINT']!;
@@ -40,11 +44,21 @@ class AuthService {
         // Store login data on successful login
         await _storeLoginData(responseData);
 
-        // Success
+        // Check if vendor has a store after successful login
+        print('🏪 Checking if vendor has a store after login...');
+        final storeResult = await _storeService.getStore();
+        print('🏪 Store check result: $storeResult');
+
+        // Success - include store information in response
         return {
           'success': true,
           'data': responseData,
           'message': responseData['message'] ?? 'Login successful',
+          'storeInfo': {
+            'hasStore':
+                storeResult['hasStore'] ?? false, // Make sure this is correct
+            'data': storeResult['data'], // This contains the store data
+          },
         };
       } else {
         // Error from server
@@ -89,10 +103,20 @@ class AuthService {
         // Store data on successful registration
         await _storeRegistrationData(responseData);
 
+        // Check if vendor has a store after successful registration
+        print('🏪 Checking if vendor has a store after registration...');
+        final storeResult = await _storeService.getStore();
+        print('🏪 Store check result: $storeResult');
+
+        // Success - include store information in response
         return {
           'success': true,
           'data': responseData,
           'message': responseData['message'] ?? 'Registration successful',
+          'storeInfo': {
+            'hasStore': storeResult['hasStore'] ?? false,
+            'storeData': storeResult['data'],
+          },
         };
       } else {
         // Error from server
