@@ -25,6 +25,10 @@ Future<void> showLogoutDialog(BuildContext context) async {
             // Close the confirmation dialog first
             Navigator.of(context).pop();
 
+            // Store the navigator for later use
+            final navigator = Navigator.of(context);
+            final scaffoldMessenger = ScaffoldMessenger.of(context);
+
             // Show loading dialog
             showDialog(
               context: context,
@@ -48,55 +52,47 @@ Future<void> showLogoutDialog(BuildContext context) async {
                       .logout();
 
               // Close loading dialog first
-              if (context.mounted) {
-                Navigator.of(context).pop(); // Close loading dialog
-              }
+              navigator.pop(); // Close loading dialog
 
               // Always navigate to login screen after logout attempt
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
+              navigator.pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
 
-                // Show appropriate message
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Déconnexion réussie'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Déconnexion effectuée'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                }
-              }
-            } catch (e) {
-              // Close loading dialog
-              if (context.mounted) {
-                Navigator.of(context).pop(); // Close loading dialog
-              }
-
-              // Still navigate to login screen even if there's an error
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-
-                ScaffoldMessenger.of(context).showSnackBar(
+              // Show appropriate message
+              if (success) {
+                scaffoldMessenger.showSnackBar(
                   const SnackBar(
-                    content: Text(
-                        'Erreur lors de la déconnexion, mais vous avez été déconnecté'),
-                    backgroundColor: Colors.red,
+                    content: Text('Déconnexion réussie'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Déconnexion effectuée'),
+                    backgroundColor: Colors.orange,
                   ),
                 );
               }
+            } catch (e) {
+              // Close loading dialog
+              navigator.pop(); // Close loading dialog
+
+              // Still navigate to login screen even if there's an error
+              navigator.pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+
+              scaffoldMessenger.showSnackBar(
+                const SnackBar(
+                  content: Text(
+                      'Erreur lors de la déconnexion, mais vous avez été déconnecté'),
+                  backgroundColor: Colors.red,
+                ),
+              );
             }
           },
           child: const Text(
