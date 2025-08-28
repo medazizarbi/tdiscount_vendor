@@ -45,8 +45,8 @@ class HorizontalProductCard extends StatelessWidget {
               ),
               clipBehavior: Clip.antiAlias,
               child: Image.network(
-                product.imageUrls.isNotEmpty
-                    ? product.imageUrls.first
+                product.images.isNotEmpty
+                    ? product.images.first
                     : 'https://tdiscount.tn/wp-content/uploads/2025/03/tv-condor-50-smart-ultra-hd-4k-1-1.webp',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
@@ -108,25 +108,36 @@ class HorizontalProductCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Second Row: SKU and Price
+                  // Second Row: Stock and Price
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // SKU
-                      Text(
-                        product.sku != null
-                            ? 'SKU: ${product.sku}'
-                            : 'SKU: N/A',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: themedColor(
-                              context, Colors.grey[600]!, Colors.grey[400]!),
-                          fontWeight: FontWeight.w400,
-                        ),
+                      // Stock Status
+                      Row(
+                        children: [
+                          Icon(
+                            product.inStock
+                                ? Icons.check_circle
+                                : Icons.warning,
+                            size: 16,
+                            color:
+                                product.inStock ? Colors.green : Colors.orange,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Stock: ${product.stock}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: themedColor(context, Colors.grey[600]!,
+                                  Colors.grey[400]!),
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
                       ),
                       // Price (aligned to right)
                       Text(
-                        product.price,
+                        product.formattedPrice,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -136,6 +147,48 @@ class HorizontalProductCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  // Third Row: Category and Status (if needed)
+                  if (product.category != null || !product.isActive) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Category
+                        if (product.category != null)
+                          Text(
+                            product.category!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: themedColor(context, Colors.grey[500]!,
+                                  Colors.grey[500]!),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        // Status indicator
+                        if (!product.isActive)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: product.status == 'out_of_stock'
+                                  ? Colors.red.withOpacity(0.1)
+                                  : Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              product.status.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: product.status == 'out_of_stock'
+                                    ? Colors.red
+                                    : Colors.orange,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

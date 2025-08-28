@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../utils/constants/colors.dart';
 import '../utils/widgets/custom_app_bar.dart';
 import '../utils/widgets/screen_container.dart';
 import '../utils/widgets/product_images_viewer.dart';
 import '../models/product.dart';
+import 'product_form_screen.dart'; // Add this import
+import '../viewmodels/product_viewmodel.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -18,21 +21,19 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  // Add this line to get access to ProductViewModel
+  late ProductViewModel _productViewModel;
   bool descriptionExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _productViewModel = Provider.of<ProductViewModel>(context, listen: false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-
-    String? formattedShortDescription;
-    if (product.shortDescription != null &&
-        product.shortDescription!.isNotEmpty) {
-      formattedShortDescription = product.shortDescription!
-          .split('-')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .join('\n');
-    }
 
     return Scaffold(
       body: CustomScrollView(
@@ -40,15 +41,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           CustomSliverAppBar(
             actions: [
               IconButton(
-                icon: const Icon(Icons.edit, color: TColors.black),
-                onPressed: () {
-                  // Handle edit product
-                },
-              ),
-              IconButton(
                 icon: const Icon(Icons.more_vert, color: TColors.black),
                 onPressed: () {
-                  // Handle more options
+                  _showMoreOptions(context);
                 },
               ),
             ],
@@ -60,15 +55,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           SliverToBoxAdapter(
             child: ScreenContainer(
-              title: 'Product Details',
+              title: 'Détails du Produit', // Translated to French
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
 
                   // Product Images Viewer
-                  product.imageUrls.isNotEmpty
-                      ? ProductImagesViewer(imageUrls: product.imageUrls)
+                  product.images.isNotEmpty
+                      ? ProductImagesViewer(imageUrls: product.images)
                       : Container(
                           height: 350,
                           width: double.infinity,
@@ -100,102 +95,126 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   const SizedBox(height: 16),
 
                   // Price Section
+                  Text(
+                    product.formattedPrice,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: themedColor(
+                          context, TColors.textPrimary, TColors.primary),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Product Info Row
                   Row(
                     children: [
-                      Text(
-                        product.price,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: themedColor(
-                              context, TColors.textPrimary, TColors.primary),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (product.regularPrice != null)
-                        Text(
-                          product.regularPrice!,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.red,
-                            decoration: TextDecoration.lineThrough,
-                            decorationColor: Colors.red,
+                      // Stock Info - Translated
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: product.inStock
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                product.inStock
+                                    ? Icons.check_circle
+                                    : Icons.warning,
+                                size: 20,
+                                color:
+                                    product.inStock ? Colors.green : Colors.red,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Stock: ${product.stock}',
+                                style: TextStyle(
+                                  color: product.inStock
+                                      ? Colors.green
+                                      : Colors.red,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Status Info - Translated
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color:
+                              _getStatusColor(product.status).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          _getStatusText(
+                              product.status), // Use translated status
+                          style: TextStyle(
+                            color: _getStatusColor(product.status),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-
-                  // SKU
-                  if (product.sku != null && product.sku!.isNotEmpty)
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          const TextSpan(
-                            text: 'SKU: ',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          TextSpan(
-                            text: product.sku,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   const SizedBox(height: 16),
 
-                  // Stock Status
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: product.inStock ? Colors.green : Colors.red,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      product.inStock ? 'In Stock' : 'Out of Stock',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                  // Category - Translated
+                  if (product.category != null &&
+                      product.category!.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: themedColor(context,
+                            TColors.grey.withOpacity(0.1), TColors.darkerGrey),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  const Divider(thickness: 1, color: Colors.grey),
-                  const SizedBox(height: 16),
-
-                  // Short Description
-                  if (formattedShortDescription != null &&
-                      formattedShortDescription.isNotEmpty) ...[
-                    Text(
-                      'Features:',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: themedColor(context, TColors.textPrimary,
-                            TColors.textSecondary),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      formattedShortDescription,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontStyle: FontStyle.italic,
+                      child: Text(
+                        'Catégorie: ${product.category}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: themedColor(
+                              context, TColors.textPrimary, TColors.grey),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
                   ],
 
-                  // Description
+                  // Timestamps - Translated
+                  Text(
+                    'Créé: ${_formatDate(product.createdAt)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: themedColor(
+                          context, Colors.grey[600]!, Colors.grey[400]!),
+                    ),
+                  ),
+                  Text(
+                    'Modifié: ${_formatDate(product.updatedAt)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: themedColor(
+                          context, Colors.grey[600]!, Colors.grey[400]!),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  const Divider(thickness: 1, color: Colors.grey),
+                  const SizedBox(height: 16),
+
+                  // Description - Translated
                   if (product.description != null &&
                       product.description!.isNotEmpty) ...[
                     Text(
@@ -230,26 +249,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     descriptionExpanded = true;
                                   });
                                 },
-                                child: const Text('See More'),
+                                child: const Text('Voir Plus'),
+                              ),
+                            ],
+                          ),
+                        if (descriptionExpanded)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    descriptionExpanded = false;
+                                  });
+                                },
+                                child: const Text('Voir Moins'),
                               ),
                             ],
                           ),
                       ],
                     ),
-                  ],
-
-                  // No description message
-                  if ((formattedShortDescription == null ||
-                          formattedShortDescription.isEmpty) &&
-                      (product.description == null ||
-                          product.description!.isEmpty))
+                  ] else ...[
+                    // No description message - Translated
                     const Text(
-                      'No description available.',
+                      'Aucune description disponible.',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
                       ),
                     ),
+                  ],
 
                   const SizedBox(height: 100), // Extra space for scrolling
                 ],
@@ -259,5 +288,182 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ],
       ),
     );
+  }
+
+  // Add this method for more options
+  void _showMoreOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit, color: TColors.primary),
+              title: const Text('Modifier le Produit'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProductFormScreen(
+                      title: 'Modifier le Produit',
+                      product: widget.product,
+                      isEdit: true,
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Supprimer le Produit'),
+              onTap: () {
+                Navigator.pop(context);
+                _showDeleteConfirmation();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: themedColor(context, Colors.white, TColors.carddark),
+        title: Text(
+          'Supprimer Produit',
+          style: TextStyle(
+            color: themedColor(context, TColors.textPrimary, TColors.textWhite),
+          ),
+        ),
+        content: Text(
+          'Êtes-vous sûr de vouloir supprimer "${widget.product.name}" ?',
+          style: TextStyle(
+            color:
+                themedColor(context, TColors.textSecondary, TColors.textWhite),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: themedColor(context, Colors.black, Colors.white),
+              backgroundColor: themedColor(
+                  context,
+                  Colors.grey[200] ?? Colors.white,
+                  Colors.grey[700] ?? Colors.black),
+            ),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () async {
+              // Close the dialog first
+              Navigator.pop(context);
+
+              // Show loading indicator
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Row(
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text('Suppression en cours...'),
+                      ],
+                    ),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              }
+
+              // Perform delete operation
+              final success =
+                  await _productViewModel.deleteProduct(widget.product.id);
+
+              // Check if widget is still mounted before showing results
+              if (!mounted) return;
+
+              if (success) {
+                // Navigate back to products list first
+                Navigator.pop(this.context);
+
+                // Then show success message
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  SnackBar(
+                    content:
+                        Text('${widget.product.name} supprimé avec succès'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                // Show error message (stay on current screen)
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Erreur lors de la suppression du produit'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 8,
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'active':
+        return Colors.green;
+      case 'inactive':
+        return Colors.orange;
+      case 'out_of_stock':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Add this method for translated status text
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'active':
+        return 'ACTIF';
+      case 'inactive':
+        return 'INACTIF';
+      case 'out_of_stock':
+        return 'RUPTURE';
+      default:
+        return status.toUpperCase();
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 }

@@ -169,6 +169,7 @@ class _CreateStoreScreenState extends State<CreateStoreScreen> {
       body: CustomScrollView(
         slivers: [
           const CustomSliverAppBar(
+            showBackButton: true,
             showThemeToggle: true,
             pinned: false,
             floating: true,
@@ -330,7 +331,7 @@ class _CreateStoreScreenState extends State<CreateStoreScreen> {
                                     backgroundColor: storeViewModel.isLoading
                                         ? TColors.buttonDisabled
                                         : TColors.primary,
-                                    foregroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 16),
                                     shape: RoundedRectangleBorder(
@@ -370,7 +371,7 @@ class _CreateStoreScreenState extends State<CreateStoreScreen> {
                             child: TextButton(
                               onPressed: () => Navigator.pop(context),
                               style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
+                                foregroundColor: Colors.black,
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(

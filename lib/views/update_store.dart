@@ -194,6 +194,7 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
       body: CustomScrollView(
         slivers: [
           const CustomSliverAppBar(
+            showBackButton: true,
             showThemeToggle: true,
             pinned: false,
             floating: true,
@@ -355,7 +356,7 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
                                     backgroundColor: storeViewModel.isLoading
                                         ? TColors.buttonDisabled
                                         : TColors.primary,
-                                    foregroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 16),
                                     shape: RoundedRectangleBorder(
@@ -395,7 +396,7 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
                             child: TextButton(
                               onPressed: () => Navigator.pop(context),
                               style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
+                                foregroundColor: Colors.black,
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
