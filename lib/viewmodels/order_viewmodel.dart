@@ -228,6 +228,33 @@ class OrderViewModel extends ChangeNotifier {
     }
   }
 
+  /// Get order notes by ID
+  Future<Map<String, dynamic>> getOrderNotes(String orderId) async {
+    try {
+      final result = await _orderService.getOrderNotes(orderId);
+
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'notes': result['notes'],
+        };
+      } else {
+        setError(result['error'] ?? 'Erreur lors du chargement des notes');
+        return {
+          'success': false,
+          'error': result['error'] ?? 'Erreur lors du chargement des notes',
+          'requiresAuth': result['requiresAuth'] ?? false,
+        };
+      }
+    } catch (e) {
+      setError('Erreur: ${e.toString()}');
+      return {
+        'success': false,
+        'error': 'Erreur: ${e.toString()}',
+      };
+    }
+  }
+
   /// Check if should load more (for infinite scroll)
   bool shouldLoadMore(double currentScrollPosition, double maxScrollExtent) {
     const threshold = 200.0; // pixels from bottom

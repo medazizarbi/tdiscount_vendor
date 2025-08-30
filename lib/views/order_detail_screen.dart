@@ -25,6 +25,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   late ProductViewModel _productViewModel;
   final Map<String, Product?> _products = {}; // Cache for loaded products
   bool _isLoadingProducts = false;
+  List<dynamic> _orderNotes = []; // Add this line
+  bool _isLoadingNotes = false; // Add this line
 
   @override
   void initState() {
@@ -32,9 +34,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     _orderViewModel = Provider.of<OrderViewModel>(context, listen: false);
     _productViewModel = Provider.of<ProductViewModel>(context, listen: false);
 
-    // Use addPostFrameCallback to load products after the build is complete
+    // Use addPostFrameCallback to load products and notes after the build is complete
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadOrderProducts();
+      _loadOrderNotes(); // Add this line
     });
   }
 
@@ -73,6 +76,40 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       setState(() {
         _isLoadingProducts = false;
       });
+    }
+  }
+
+  // Add this new method
+  Future<void> _loadOrderNotes() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingNotes = true;
+    });
+
+    try {
+      final result = await _orderViewModel.getOrderNotes(widget.order.id);
+
+      if (mounted) {
+        setState(() {
+          if (result['success'] == true) {
+            _orderNotes = result['notes'] ?? [];
+          } else {
+            _orderNotes = [];
+            // Optionally show error if needed
+            debugPrint('Error loading order notes: ${result['error']}');
+          }
+          _isLoadingNotes = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _orderNotes = [];
+          _isLoadingNotes = false;
+        });
+      }
+      debugPrint('Error loading order notes: $e');
     }
   }
 
@@ -467,6 +504,82 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
+  // Add this method to build the notes section
+  Widget? _buildOrderNotesSection() {
+    // Don't show anything if loading or no notes
+    if (_isLoadingNotes || _orderNotes.isEmpty) {
+      return null;
+    }
+
+    return _buildSectionCard(
+      title: 'Notes de la Commande',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: _orderNotes.map<Widget>((note) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: themedColor(context, Colors.grey[100]!, Colors.grey[700]!),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color:
+                    themedColor(context, Colors.grey[300]!, Colors.grey[600]!),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Note content
+                Text(
+                  note['content'] ?? note['note'] ?? note.toString(),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: themedColor(
+                        context, TColors.textPrimary, TColors.textWhite),
+                    height: 1.4,
+                  ),
+                ),
+                // Note metadata if available
+                if (note is Map &&
+                    (note['createdAt'] != null || note['author'] != null))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (note['author'] != null)
+                          Text(
+                            'Par: ${note['author']}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: themedColor(context, Colors.grey[600]!,
+                                  Colors.grey[400]!),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        if (note['createdAt'] != null)
+                          Text(
+                            _formatDateTime(DateTime.parse(note['createdAt'])),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: themedColor(context, Colors.grey[600]!,
+                                  Colors.grey[400]!),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final order = widget.order;
@@ -555,6 +668,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       ],
                     ),
                   ),
+
+                  // Order Notes Section - Add this here
+                  if (_buildOrderNotesSection() != null)
+                    _buildOrderNotesSection()!,
 
                   // Products Section
                   _buildSectionCard(
