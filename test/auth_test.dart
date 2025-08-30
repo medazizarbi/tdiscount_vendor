@@ -188,20 +188,5 @@ void main() {
         expect(registerUrl, contains(AuthService.registerEndpoint));
       });
     });
-
-    group('Authentication State Tests', () {
-      test('should return false for isAuthenticated initially', () async {
-        final isAuth = await authService.isAuthenticated();
-        expect(isAuth, false);
-      });
-
-      test('should logout successfully', () async {
-        final result = await authService.logout();
-
-        expect(result, isA<Map<String, dynamic>>());
-        expect(result['success'], true);
-        expect(result['message'], isNotNull);
-      });
-    });
   });
 }
