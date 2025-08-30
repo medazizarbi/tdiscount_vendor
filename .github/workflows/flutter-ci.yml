@@ -46,9 +46,9 @@ jobs:
       run: flutter build apk --release
 
     - name: Create Release
-      id: create_release
       uses: softprops/action-gh-release@v2
       with:
+        tag_name: "build-${{ github.run_number }}"
         files: build/app/outputs/flutter-apk/app-release.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -73,12 +73,19 @@ jobs:
         server_port: 587
         username: ${{ secrets.EMAIL_USERNAME }}
         password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: "New APK Release"
+        subject: "New Tdiscount Vendor APK Release"
         to: ${{ secrets.RECIPIENT_EMAIL }}
         from: ${{ secrets.EMAIL_USERNAME }}
         html_body: |
-          <h2>New APK Release</h2>
+          <h2>New scount Vendor APK Release</h2>
           <p>Download the APK <a href="${{ steps.apk_url.outputs.APK_URL }}">here</a>.</p>
           <p>Scan the QR code below to download:</p>
           <img src="data:image/png;base64,${{ steps.generate_qr.outputs.QR_BASE64 }}" alt="QR Code">
         attachments: qr-code.png
+
+    - name: Create a tag for release
+      run: |
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+        git tag "build-${{ github.run_number }}"
+        git push origin "build-${{ github.run_number }}"
