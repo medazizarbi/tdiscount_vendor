@@ -1,109 +1,1154 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../utils/constants/colors.dart';
 import '../utils/widgets/custom_app_bar.dart';
 import '../utils/widgets/screen_container.dart';
+import '../viewmodels/dashboard_viewmodel.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize dashboard data when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DashboardViewModel>().initialize();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomSliverAppBar(
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined,
-                    color: TColors.black),
-                onPressed: () {
-                  // Handle notifications
-                },
+      body: Consumer<DashboardViewModel>(
+        builder: (context, viewModel, child) {
+          return CustomScrollView(
+            slivers: [
+              CustomSliverAppBar(
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: TColors.black),
+                    onPressed: () => viewModel.refreshDashboard(),
+                  ),
+                ],
+                showThemeToggle: true,
+                pinned: true,
+                floating: false,
+                snap: false,
+              ),
+              SliverToBoxAdapter(
+                child: ScreenContainer(
+                  title: 'Tableau de Bord',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Error handling
+                      if (viewModel.hasError) _buildErrorWidget(viewModel),
+
+                      // Period Selector
+                      _buildPeriodSelector(viewModel),
+                      const SizedBox(height: 20),
+
+                      // Sales Analytics Section
+                      _buildSectionTitle('Analyses des Ventes'),
+                      const SizedBox(height: 12),
+                      _buildSalesAnalytics(viewModel),
+                      const SizedBox(height: 20),
+
+                      // Sales Chart Section
+                      _buildSectionTitle('Tendance des Ventes'),
+                      const SizedBox(height: 12),
+                      _buildSalesChart(viewModel),
+                      const SizedBox(height: 20),
+
+                      // Orders Section
+                      _buildSectionTitle('Aperçu des Commandes'),
+                      const SizedBox(height: 12),
+                      _buildOrdersSection(viewModel),
+                      const SizedBox(height: 20),
+
+                      // Products Section
+                      _buildSectionTitle('Performance des Produits'),
+                      const SizedBox(height: 12),
+                      _buildProductsSection(viewModel),
+
+                      const SizedBox(height: 50), // Bottom spacing
+                    ],
+                  ),
+                ),
               ),
             ],
-            showThemeToggle: true,
-            pinned: true,
-            floating: false,
-            snap: false,
-          ),
-          const SliverToBoxAdapter(
-            child: ScreenContainer(
-              title: 'Dashboard',
-              child: Column(
-                children: [
-                  // Dashboard content here
-                  Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          Icon(Icons.dashboard,
-                              size: 60, color: TColors.primary),
-                          SizedBox(height: 16),
-                          Text(
-                            'Welcome to Dashboard',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Here you can view your vendor statistics and manage your business.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget(DashboardViewModel viewModel) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red.shade700),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Erreur',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red.shade700,
                   ),
-                  SizedBox(height: 16),
-                  // Add more dashboard widgets here
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Card(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Column(
-                              children: [
-                                Icon(Icons.monetization_on,
-                                    color: TColors.primary),
-                                SizedBox(height: 8),
-                                Text('Total Sales'),
-                                Text('1,234 TND',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          ),
+                ),
+                Text(
+                  _getUserFriendlyErrorMessage(viewModel.error),
+                  style: TextStyle(color: Colors.red.shade600),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => viewModel.clearError(),
+            child: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Add this helper method
+  String _getUserFriendlyErrorMessage(String? error) {
+    if (error == null) return 'Une erreur inattendue est survenue';
+
+    // Convert technical errors to user-friendly messages
+    final lowerError = error.toLowerCase();
+
+    if (lowerError.contains('network') ||
+        lowerError.contains('connection') ||
+        lowerError.contains('timeout') ||
+        lowerError.contains('unreachable')) {
+      return 'Problème de connexion réseau. Vérifiez votre connexion internet.';
+    }
+
+    if (lowerError.contains('unauthorized') ||
+        lowerError.contains('401') ||
+        lowerError.contains('forbidden') ||
+        lowerError.contains('403')) {
+      return 'Session expirée. Veuillez vous reconnecter.';
+    }
+
+    if (lowerError.contains('not found') || lowerError.contains('404')) {
+      return 'Ressource non trouvée. Veuillez réessayer.';
+    }
+
+    if (lowerError.contains('server') ||
+        lowerError.contains('500') ||
+        lowerError.contains('502') ||
+        lowerError.contains('503') ||
+        lowerError.contains('504')) {
+      return 'Problème technique temporaire. Veuillez réessayer dans quelques instants.';
+    }
+
+    if (lowerError.contains('bad request') || lowerError.contains('400')) {
+      return 'Requête invalide. Veuillez rafraîchir la page.';
+    }
+
+    if (lowerError.contains('format') ||
+        lowerError.contains('parse') ||
+        lowerError.contains('json')) {
+      return 'Erreur de format des données. Veuillez réessayer.';
+    }
+
+    if (lowerError.contains('permission') || lowerError.contains('access')) {
+      return 'Vous n\'avez pas les permissions nécessaires pour cette action.';
+    }
+
+    if (lowerError.contains('rate limit') ||
+        lowerError.contains('too many requests')) {
+      return 'Trop de requêtes. Veuillez patienter avant de réessayer.';
+    }
+
+    // For any other error, return a generic message
+    return 'Une erreur est survenue. Veuillez réessayer ou contacter le support si le problème persiste.';
+  }
+
+  Widget _buildPeriodSelector(DashboardViewModel viewModel) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            const Icon(Icons.date_range, color: TColors.primary),
+            const SizedBox(width: 12),
+            const Text(
+              'Période:',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: viewModel.availablePeriods.map((period) {
+                    final isSelected = viewModel.selectedPeriod == period;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(viewModel.getPeriodDisplayText(period)),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            viewModel.changePeriod(period);
+                          }
+                        },
+                        selectedColor: TColors.primary.withOpacity(0.2),
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : Colors.grey[100],
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? TColors.primary
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Card(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Column(
-                              children: [
-                                Icon(Icons.shopping_cart,
-                                    color: TColors.primary),
-                                SizedBox(height: 8),
-                                Text('Orders'),
-                                Text('45',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
-                              ],
-                            ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? TColors.primary
+            : Colors.black,
+      ),
+    );
+  }
+
+  Widget _buildSalesAnalytics(DashboardViewModel viewModel) {
+    if (viewModel.isStatsLoading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Top row - Main metrics
+        Row(
+          children: [
+            Expanded(
+              child: _buildMetricCard(
+                icon: Icons.monetization_on,
+                title: 'Ventes Totales',
+                value: '${viewModel.totalSales.toStringAsFixed(2)} TND',
+                subtitle:
+                    '+${viewModel.getGrowthPercentage()}% vs dernière ${viewModel.selectedPeriod}',
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildMetricCard(
+                icon: Icons.shopping_cart,
+                title: 'Commandes Totales',
+                value: '${viewModel.totalOrders}',
+                subtitle: '${viewModel.completedOrders} terminées',
+                color: Colors.blue,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Bottom row - Additional metrics
+        Row(
+          children: [
+            Expanded(
+              child: _buildMetricCard(
+                icon: Icons.trending_up,
+                title: 'Valeur Moy. Commande',
+                value: '${viewModel.averageOrderValue.toStringAsFixed(2)} TND',
+                subtitle: 'Par commande',
+                color: Colors.orange,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildMetricCard(
+                icon: Icons.percent,
+                title: 'Taux de Réussite',
+                value:
+                    '${viewModel.getOrderCompletionRate().toStringAsFixed(1)}%',
+                subtitle: 'Taux de succès',
+                color: Colors.purple,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetricCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required String subtitle,
+    required Color color,
+  }) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 24),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSalesChart(DashboardViewModel viewModel) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.show_chart, color: TColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Ventes pour ${viewModel.getPeriodDisplayText(viewModel.selectedPeriod)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const Spacer(),
+                if (viewModel.isSalesChartLoading)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              height: 250,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: TColors.primary.withOpacity(0.3)),
+              ),
+              child: viewModel.isSalesChartLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : viewModel.hasSalesChart
+                      ? _buildLineChart(viewModel)
+                      : const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.bar_chart,
+                                  size: 60, color: Colors.grey),
+                              SizedBox(height: 8),
+                              Text(
+                                'Aucune Donnée de Vente Disponible',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+            ),
+            if (viewModel.hasSalesChart) ...[
+              const SizedBox(height: 12),
+              _buildChartLegend(viewModel),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLineChart(DashboardViewModel viewModel) {
+    final salesData = viewModel.salesChart?.salesData ?? [];
+
+    if (salesData.isEmpty) {
+      return const Center(
+        child: Text(
+          'Aucune donnée à afficher',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    // Prepare data points
+    List<FlSpot> spots = [];
+    double maxY = 0;
+
+    for (int i = 0; i < salesData.length; i++) {
+      final sales = salesData[i].totalSales;
+      spots.add(FlSpot(i.toDouble(), sales));
+      if (sales > maxY) maxY = sales;
+    }
+
+    // Add some padding to max value
+    maxY = maxY * 1.2;
+    if (maxY == 0) maxY = 100;
+
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: true,
+          horizontalInterval: maxY / 5,
+          verticalInterval: 1,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey.withOpacity(0.3),
+              strokeWidth: 1,
+            );
+          },
+          getDrawingVerticalLine: (value) {
+            return FlLine(
+              color: Colors.grey.withOpacity(0.3),
+              strokeWidth: 1,
+            );
+          },
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              interval: 1,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                final index = value.toInt();
+                if (index >= 0 && index < salesData.length) {
+                  final date = DateTime.parse(salesData[index].date);
+                  String displayText;
+
+                  switch (viewModel.selectedPeriod) {
+                    case 'day':
+                      displayText = '${date.hour}:00';
+                      break;
+                    case 'week':
+                      displayText = _getDayName(date.weekday);
+                      break;
+                    case 'month':
+                      displayText = '${date.day}';
+                      break;
+                    case 'year':
+                      displayText = _getMonthName(date.month);
+                      break;
+                    default:
+                      displayText = '${date.day}';
+                  }
+
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    child: Text(
+                      displayText,
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
+                  );
+                }
+                return const Text('');
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: maxY / 5,
+              reservedSize: 42,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                return Text(
+                  '${value.toInt()}',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        ),
+        minX: 0,
+        maxX: (salesData.length - 1).toDouble(),
+        minY: 0,
+        maxY: maxY,
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            gradient: LinearGradient(
+              colors: [
+                TColors.primary,
+                TColors.primary.withOpacity(0.6),
+              ],
+            ),
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: 4,
+                  color: TColors.primary,
+                  strokeWidth: 2,
+                  strokeColor: Colors.white,
+                );
+              },
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                colors: [
+                  TColors.primary.withOpacity(0.3),
+                  TColors.primary.withOpacity(0.1),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+        ],
+        lineTouchData: LineTouchData(
+          enabled: true,
+          touchTooltipData: LineTouchTooltipData(
+            // ✅ Correct parameter for fl_chart ^0.68.0
+            getTooltipColor: (touchedSpot) => TColors.primary.withOpacity(0.9),
+            tooltipRoundedRadius: 8,
+            tooltipPadding: const EdgeInsets.all(8),
+            tooltipMargin: 8,
+            getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+              return touchedBarSpots.map((barSpot) {
+                final index = barSpot.x.toInt();
+                if (index >= 0 && index < salesData.length) {
+                  final data = salesData[index];
+                  final date = DateTime.parse(data.date);
+                  return LineTooltipItem(
+                    '${_formatDate(date)}\n',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '${data.totalSales.toStringAsFixed(0)} TND\n',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '${data.orderCount} commandes',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
                         ),
                       ),
                     ],
+                  );
+                }
+                return null;
+              }).toList();
+            },
+          ),
+          handleBuiltInTouches: true,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChartLegend(DashboardViewModel viewModel) {
+    final salesData = viewModel.salesChart?.salesData ?? [];
+    final totalSales =
+        salesData.fold<double>(0, (sum, data) => sum + data.totalSales);
+    final totalOrders =
+        salesData.fold<int>(0, (sum, data) => sum + data.orderCount);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: TColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildLegendItem(
+            icon: Icons.trending_up,
+            label: 'Ventes Totales',
+            value: '${totalSales.toStringAsFixed(0)} TND',
+            color: TColors.primary,
+          ),
+          _buildLegendItem(
+            icon: Icons.shopping_cart,
+            label: 'Commandes Totales',
+            value: totalOrders.toString(),
+            color: Colors.blue,
+          ),
+          if (salesData.isNotEmpty)
+            _buildLegendItem(
+              icon: Icons.calendar_today,
+              label: 'Période',
+              value:
+                  '${salesData.length} ${_getPeriodUnit(viewModel.selectedPeriod)}',
+              color: Colors.orange,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: Colors.grey),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrdersSection(DashboardViewModel viewModel) {
+    if (viewModel.isLoading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Order status distribution
+        Row(
+          children: [
+            Expanded(
+              child: _buildOrderStatusCard(
+                  'En Attente', viewModel.pendingOrders, Colors.orange),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildOrderStatusCard(
+                  'En Cours', viewModel.processingOrders, Colors.blue),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildOrderStatusCard(
+                  'Terminées', viewModel.completedOrders, Colors.green),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildOrderStatusCard(
+                  'Annulées', viewModel.cancelledOrders, Colors.red),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Recent orders
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.receipt_long, color: TColors.primary),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Commandes Récentes',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (viewModel.isRecentOrdersLoading)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (viewModel.hasRecentOrders)
+                  ...viewModel.recentOrders!.recentOrders
+                      .take(5)
+                      .map((order) => _buildOrderItem(order))
+                      .toList()
+                else
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(
+                      child: Text(
+                        'Aucune commande récente',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
                   ),
-                  SizedBox(height: 300), // Extra space for scrolling
-                ],
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      // Navigate to orders screen
+                    },
+                    child: const Text('Voir Toutes les Commandes'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrderStatusCard(String status, int count, Color color) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _getOrderStatusIcon(status),
+                color: color,
+                size: 20,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              count.toString(),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              status,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getOrderStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'en attente':
+        return Icons.pending;
+      case 'en cours':
+        return Icons.sync;
+      case 'terminées':
+        return Icons.check_circle;
+      case 'annulées':
+        return Icons.cancel;
+      default:
+        return Icons.info;
+    }
+  }
+
+  Widget _buildOrderItem(dynamic order) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  order.customerName,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  order.id.substring(0, 8),
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          Text('${order.totalAmount.toStringAsFixed(2)} TND'),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _getStatusColor(order.status).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              order.status,
+              style: TextStyle(
+                fontSize: 10,
+                color: _getStatusColor(order.status),
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'terminée':
+      case 'completed':
+        return Colors.green;
+      case 'en cours':
+      case 'processing':
+        return Colors.blue;
+      case 'en attente':
+      case 'pending':
+        return Colors.orange;
+      case 'annulée':
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _buildProductsSection(DashboardViewModel viewModel) {
+    if (viewModel.isLoading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Product stats
+        Row(
+          children: [
+            Expanded(
+              child: _buildProductStatCard(
+                'Produits Totaux',
+                '${viewModel.totalProducts}',
+                Icons.inventory,
+                TColors.primary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildProductStatCard(
+                'Actifs',
+                '${viewModel.activeProducts}',
+                Icons.check_circle,
+                Colors.green,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildProductStatCard(
+                'Inactifs',
+                '${viewModel.inactiveProducts}',
+                Icons.pause_circle,
+                Colors.red,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Top products
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.star, color: TColors.primary),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Meilleurs Produits',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (viewModel.isTopProductsLoading)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (viewModel.hasTopProducts)
+                  ...viewModel.topProducts!.topProducts
+                      .asMap()
+                      .entries
+                      .map((entry) =>
+                          _buildTopProductItem(entry.key, entry.value))
+                      .toList()
+                else
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(
+                      child: Text(
+                        'Aucune donnée de produits populaires',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      // Navigate to products screen
+                    },
+                    child: const Text('Voir Tous les Produits'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProductStatCard(
+      String title, String value, IconData icon, Color color) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopProductItem(int index, dynamic product) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: TColors.primary.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: TColors.primary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${product.totalSold} vendus • ${product.totalRevenue.toStringAsFixed(0)} TND',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper methods
+  String _getDayName(int weekday) {
+    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    return days[weekday - 1];
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Jan',
+      'Fév',
+      'Mar',
+      'Avr',
+      'Mai',
+      'Juin',
+      'Juil',
+      'Août',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Déc'
+    ];
+    return months[month - 1];
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  String _getPeriodUnit(String period) {
+    switch (period) {
+      case 'day':
+        return 'heures';
+      case 'week':
+        return 'jours';
+      case 'month':
+        return 'jours';
+      case 'year':
+        return 'mois';
+      default:
+        return 'points';
+    }
   }
 }
