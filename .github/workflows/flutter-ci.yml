@@ -1,0 +1,68 @@
+name: Flutter CI/CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Analyze code
+      run: flutter analyze
+
+    - name: Run tests
+      run: flutter test
+
+    - name: Build APK
+      run: flutter build apk --release
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: build/app/outputs/flutter-apk/app-release.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Get APK URL
+      id: apk_url
+      run: |
+        echo "APK_URL=$(jq -r '.[0].browser_download_url' <<< '${{ steps.create_release.outputs.assets }}')" >> $GITHUB_OUTPUT
+
+    - name: Install qrencode
+      run: sudo apt-get update && sudo apt-get install -y qrencode
+
+    - name: Generate QR code
+      run: |
+        qrencode -o qr-code.png -s 10 "${{ steps.apk_url.outputs.APK_URL }}"
+        echo "QR_BASE64=$(base64 -w 0 qr-code.png)" >> $GITHUB_OUTPUT
+
+    - name: Send Email with QR code
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "New APK Release"
+        to: ${{ secrets.RECIPIENT_EMAIL }}
+        from: ${{ secrets.EMAIL_USERNAME }}
+        html_body: |
+          <h2>New APK Release</h2>
+          <p>Download the APK <a href="${{ steps.apk_url.outputs.APK_URL }}">here</a>.</p>
+          <p>Scan the QR code below to download:</p>
+          <img src="data:image/png;base64,${{ steps.generate_qr.outputs.QR_BASE64 }}" alt="QR Code">
+        attachments: qr-code.png
