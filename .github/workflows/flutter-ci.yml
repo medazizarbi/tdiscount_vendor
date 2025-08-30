@@ -7,6 +7,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ secrets.BASE_URL }}
+      LOGIN_ENDPOINT: ${{ secrets.LOGIN_ENDPOINT }}
+      REGISTER_ENDPOINT: ${{ secrets.REGISTER_ENDPOINT }}
+      STORE_ENDPOINT: ${{ secrets.STORE_ENDPOINT }}
+      PRODUCTS_ENDPOINT: ${{ secrets.PRODUCTS_ENDPOINT }}
+      ORDERS_ENDPOINT: ${{ secrets.ORDERS_ENDPOINT }}
+      DASHBOARD_STATS_ENDPOINT: ${{ secrets.DASHBOARD_STATS_ENDPOINT }}
+      DASHBOARD_PRODUCTS_ENDPOINT: ${{ secrets.DASHBOARD_PRODUCTS_ENDPOINT }}
+      DASHBOARD_ORDERS_ENDPOINT: ${{ secrets.DASHBOARD_ORDERS_ENDPOINT }}
+      DASHBOARD_SALES_CHART_ENDPOINT: ${{ secrets.DASHBOARD_SALES_CHART_ENDPOINT }}
 
     steps:
     - uses: actions/checkout@v4
