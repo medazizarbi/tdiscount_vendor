@@ -3,24 +3,29 @@ name: Flutter CI/CD
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      BASE_URL: ${{ secrets.BASE_URL }}
-      LOGIN_ENDPOINT: ${{ secrets.LOGIN_ENDPOINT }}
-      REGISTER_ENDPOINT: ${{ secrets.REGISTER_ENDPOINT }}
-      STORE_ENDPOINT: ${{ secrets.STORE_ENDPOINT }}
-      PRODUCTS_ENDPOINT: ${{ secrets.PRODUCTS_ENDPOINT }}
-      ORDERS_ENDPOINT: ${{ secrets.ORDERS_ENDPOINT }}
-      DASHBOARD_STATS_ENDPOINT: ${{ secrets.DASHBOARD_STATS_ENDPOINT }}
-      DASHBOARD_PRODUCTS_ENDPOINT: ${{ secrets.DASHBOARD_PRODUCTS_ENDPOINT }}
-      DASHBOARD_ORDERS_ENDPOINT: ${{ secrets.DASHBOARD_ORDERS_ENDPOINT }}
-      DASHBOARD_SALES_CHART_ENDPOINT: ${{ secrets.DASHBOARD_SALES_CHART_ENDPOINT }}
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create .env file from secrets
+      run: |
+        echo "BASE_URL=${{ secrets.BASE_URL }}" > .env
+        echo "LOGIN_ENDPOINT=${{ secrets.LOGIN_ENDPOINT }}" >> .env
+        echo "REGISTER_ENDPOINT=${{ secrets.REGISTER_ENDPOINT }}" >> .env
+        echo "STORE_ENDPOINT=${{ secrets.STORE_ENDPOINT }}" >> .env
+        echo "PRODUCTS_ENDPOINT=${{ secrets.PRODUCTS_ENDPOINT }}" >> .env
+        echo "ORDERS_ENDPOINT=${{ secrets.ORDERS_ENDPOINT }}" >> .env
+        echo "DASHBOARD_STATS_ENDPOINT=${{ secrets.DASHBOARD_STATS_ENDPOINT }}" >> .env
+        echo "DASHBOARD_PRODUCTS_ENDPOINT=${{ secrets.DASHBOARD_PRODUCTS_ENDPOINT }}" >> .env
+        echo "DASHBOARD_ORDERS_ENDPOINT=${{ secrets.DASHBOARD_ORDERS_ENDPOINT }}" >> .env
+        echo "DASHBOARD_SALES_CHART_ENDPOINT=${{ secrets.DASHBOARD_SALES_CHART_ENDPOINT }}" >> .env
 
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
