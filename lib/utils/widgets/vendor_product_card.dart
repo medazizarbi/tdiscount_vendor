@@ -88,7 +88,7 @@ class VendorProductCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '\$${product.price.toStringAsFixed(2)}',
+                        '${product.price.toStringAsFixed(3)} TND',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

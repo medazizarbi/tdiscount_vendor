@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add this import
+import 'package:tdiscount_vendor/viewmodels/order_viewmodel.dart';
 import 'package:tdiscount_vendor/viewmodels/product_viewmodel.dart';
 import 'package:tdiscount_vendor/viewmodels/store_viewmodel.dart';
 import 'provider/theme_provider.dart';
@@ -35,6 +36,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => AuthViewModel()),
         ChangeNotifierProvider(create: (context) => StoreViewModel()),
         ChangeNotifierProvider(create: (context) => ProductViewModel()),
+        ChangeNotifierProvider(create: (context) => OrderViewModel()),
       ],
       child: MyApp(isLoggedIn: isLoggedIn),
     ),

@@ -242,7 +242,7 @@ class _StoreProductScreenState extends State<StoreProductScreen> {
 
   Widget _buildLoadingState() {
     return Container(
-      height: 400,
+      height: 600,
       alignment: Alignment.center,
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,

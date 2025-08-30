@@ -68,7 +68,7 @@ class Product {
   }
 
   // Helper method to format price with currency
-  String get formattedPrice => '\$${price.toStringAsFixed(2)}';
+  String get formattedPrice => '${price.toStringAsFixed(3)} TND';
 
   // Copy with method for updating product properties
   Product copyWith({
