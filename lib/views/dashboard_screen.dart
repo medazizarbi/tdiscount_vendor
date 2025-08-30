@@ -404,25 +404,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 250,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[900]
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: TColors.primary.withOpacity(0.3)),
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? TColors.primary.withOpacity(0.5)
+                      : TColors.primary.withOpacity(0.3),
+                ),
               ),
               child: viewModel.isSalesChartLoading
                   ? const Center(child: CircularProgressIndicator())
                   : viewModel.hasSalesChart
                       ? _buildLineChart(viewModel)
-                      : const Center(
+                      : Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.bar_chart,
-                                  size: 60, color: Colors.grey),
-                              SizedBox(height: 8),
+                              Icon(
+                                Icons.bar_chart,
+                                size: 60,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[600]
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(height: 8),
                               Text(
                                 'Aucune Donnée de Vente Disponible',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[400]
+                                      : Colors.grey,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -442,12 +457,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildLineChart(DashboardViewModel viewModel) {
     final salesData = viewModel.salesChart?.salesData ?? [];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (salesData.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'Aucune donnée à afficher',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(
+            color: isDark ? Colors.grey[400] : Colors.grey,
+          ),
         ),
       );
     }
@@ -455,34 +473,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Prepare data points
     List<FlSpot> spots = [];
     double maxY = 0;
+    double minY = double.infinity;
 
     for (int i = 0; i < salesData.length; i++) {
       final sales = salesData[i].totalSales;
       spots.add(FlSpot(i.toDouble(), sales));
       if (sales > maxY) maxY = sales;
+      if (sales < minY) minY = sales;
     }
 
-    // Add some padding to max value
-    maxY = maxY * 1.2;
-    if (maxY == 0) maxY = 100;
+    // Add padding to values
+    final padding = (maxY - minY) * 0.1;
+    maxY = maxY + padding;
+    minY = (minY - padding).clamp(0.0, double.infinity);
+
+    if (maxY == minY) {
+      maxY = minY + 100;
+    }
 
     return LineChart(
       LineChartData(
         gridData: FlGridData(
           show: true,
           drawVerticalLine: true,
-          horizontalInterval: maxY / 5,
-          verticalInterval: 1,
+          horizontalInterval: (maxY - minY) / 4,
+          verticalInterval: salesData.length > 10 ? 2 : 1,
           getDrawingHorizontalLine: (value) {
             return FlLine(
-              color: Colors.grey.withOpacity(0.3),
+              color: isDark
+                  ? Colors.grey.withOpacity(0.2)
+                  : Colors.grey.withOpacity(0.3),
               strokeWidth: 1,
+              dashArray: [5, 5],
             );
           },
           getDrawingVerticalLine: (value) {
             return FlLine(
-              color: Colors.grey.withOpacity(0.3),
+              color: isDark
+                  ? Colors.grey.withOpacity(0.1)
+                  : Colors.grey.withOpacity(0.2),
               strokeWidth: 1,
+              dashArray: [3, 3],
             );
           },
         ),
@@ -497,39 +528,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 30,
-              interval: 1,
+              reservedSize: 35,
+              interval: salesData.length > 15 ? 3 : 1,
               getTitlesWidget: (double value, TitleMeta meta) {
                 final index = value.toInt();
                 if (index >= 0 && index < salesData.length) {
                   final date = DateTime.parse(salesData[index].date);
-                  String displayText;
-
-                  switch (viewModel.selectedPeriod) {
-                    case 'day':
-                      displayText = '${date.hour}:00';
-                      break;
-                    case 'week':
-                      displayText = _getDayName(date.weekday);
-                      break;
-                    case 'month':
-                      displayText = '${date.day}';
-                      break;
-                    case 'year':
-                      displayText = _getMonthName(date.month);
-                      break;
-                    default:
-                      displayText = '${date.day}';
-                  }
+                  String displayText =
+                      _getChartLabelText(date, viewModel.selectedPeriod);
 
                   return SideTitleWidget(
                     axisSide: meta.axisSide,
-                    child: Text(
-                      displayText,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
+                    child: Transform.rotate(
+                      angle: salesData.length > 10 ? -0.5 : 0,
+                      child: Text(
+                        displayText,
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                          fontSize: salesData.length > 15 ? 8 : 10,
+                        ),
                       ),
                     ),
                   );
@@ -541,14 +559,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              interval: maxY / 5,
-              reservedSize: 42,
+              interval: (maxY - minY) / 4,
+              reservedSize: 50,
               getTitlesWidget: (double value, TitleMeta meta) {
                 return Text(
-                  '${value.toInt()}',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontWeight: FontWeight.bold,
+                  _formatCurrency(value),
+                  style: TextStyle(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontWeight: FontWeight.w500,
                     fontSize: 10,
                   ),
                 );
@@ -558,21 +576,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         borderData: FlBorderData(
           show: true,
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          border: Border.all(
+            color: isDark
+                ? Colors.grey.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.4),
+            width: 1,
+          ),
         ),
         minX: 0,
         maxX: (salesData.length - 1).toDouble(),
-        minY: 0,
+        minY: minY,
         maxY: maxY,
         lineBarsData: [
           LineChartBarData(
             spots: spots,
             isCurved: true,
+            curveSmoothness: 0.3,
             gradient: LinearGradient(
               colors: [
                 TColors.primary,
-                TColors.primary.withOpacity(0.6),
+                TColors.primary.withOpacity(0.7),
+                TColors.primary.withOpacity(0.5),
               ],
+              stops: const [0.0, 0.5, 1.0],
             ),
             barWidth: 3,
             isStrokeCapRound: true,
@@ -580,10 +606,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               show: true,
               getDotPainter: (spot, percent, barData, index) {
                 return FlDotCirclePainter(
-                  radius: 4,
+                  radius: 5,
                   color: TColors.primary,
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
+                  strokeWidth: 3,
+                  strokeColor: isDark ? Colors.grey[900]! : Colors.white,
                 );
               },
             ),
@@ -591,23 +617,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  TColors.primary.withOpacity(0.3),
-                  TColors.primary.withOpacity(0.1),
+                  TColors.primary.withOpacity(0.4),
+                  TColors.primary.withOpacity(0.2),
+                  TColors.primary.withOpacity(0.05),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
+            ),
+            shadow: Shadow(
+              color: TColors.primary.withOpacity(0.3),
+              offset: const Offset(0, 2),
+              blurRadius: 4,
             ),
           ),
         ],
         lineTouchData: LineTouchData(
           enabled: true,
           touchTooltipData: LineTouchTooltipData(
-            // ✅ Correct parameter for fl_chart ^0.68.0
-            getTooltipColor: (touchedSpot) => TColors.primary.withOpacity(0.9),
-            tooltipRoundedRadius: 8,
-            tooltipPadding: const EdgeInsets.all(8),
+            getTooltipColor: (touchedSpot) =>
+                isDark ? Colors.grey[800]! : TColors.primary.withOpacity(0.9),
+            tooltipRoundedRadius: 12,
+            tooltipPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             tooltipMargin: 8,
+            fitInsideHorizontally: true,
+            fitInsideVertically: true,
             getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
               return touchedBarSpots.map((barSpot) {
                 final index = barSpot.x.toInt();
@@ -615,15 +650,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   final data = salesData[index];
                   final date = DateTime.parse(data.date);
                   return LineTooltipItem(
-                    '${_formatDate(date)}\n',
-                    const TextStyle(
-                      color: Colors.white,
+                    '📅 ${_formatTooltipDate(date, viewModel.selectedPeriod)}\n',
+                    TextStyle(
+                      color: isDark ? Colors.white : Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
                     children: [
                       TextSpan(
-                        text: '${data.totalSales.toStringAsFixed(0)} TND\n',
+                        text: '💰 ${data.totalSales.toStringAsFixed(0)} TND\n',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
@@ -631,7 +666,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       TextSpan(
-                        text: '${data.orderCount} commandes',
+                        text:
+                            '📦 ${data.orderCount} commande${data.orderCount > 1 ? 's' : ''}',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 10,
@@ -644,10 +680,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
               }).toList();
             },
           ),
+          touchCallback:
+              (FlTouchEvent event, LineTouchResponse? touchResponse) {
+            // Add haptic feedback on touch
+            if (event is FlTapUpEvent &&
+                touchResponse?.lineBarSpots?.isNotEmpty == true) {
+              // You can add HapticFeedback.lightImpact(); here if needed
+            }
+          },
           handleBuiltInTouches: true,
         ),
       ),
     );
+  }
+
+  // Helper methods for better formatting
+  String _getChartLabelText(DateTime date, String period) {
+    switch (period) {
+      case 'day':
+        return '${date.hour}h';
+      case 'week':
+        return _getDayName(date.weekday);
+      case 'month':
+        return '${date.day}';
+      case 'year':
+        return _getMonthName(date.month);
+      default:
+        return '${date.day}';
+    }
+  }
+
+  String _formatTooltipDate(DateTime date, String period) {
+    switch (period) {
+      case 'day':
+        return '${date.hour}:00';
+      case 'week':
+        return '${_getDayName(date.weekday)} ${date.day}/${date.month}';
+      case 'month':
+        return '${date.day}/${date.month}/${date.year}';
+      case 'year':
+        return '${_getMonthName(date.month)} ${date.year}';
+      default:
+        return _formatDate(date);
+    }
+  }
+
+  String _formatCurrency(double value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    } else if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(1)}K';
+    } else {
+      return value.toStringAsFixed(0);
+    }
   }
 
   Widget _buildChartLegend(DashboardViewModel viewModel) {
