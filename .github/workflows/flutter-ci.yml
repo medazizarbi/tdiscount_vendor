@@ -46,12 +46,13 @@ jobs:
       run: flutter build apk --release
 
     - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: "build-${{ github.run_number }}"
-        files: build/app/outputs/flutter-apk/app-release.apk
+      if: github.event_name == 'push'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create "${{ github.run_number }}" build/app/outputs/flutter-apk/app-release.apk \
+          --title "Release ${{ github.run_number }}" \
+          --notes "Automated release by GitHub Actions"
 
     - name: Get APK URL
       id: apk_url
