@@ -395,7 +395,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: TColors.primary, // <-- updated
+                    ),
                   ),
               ],
             ),
@@ -415,7 +418,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               child: viewModel.isSalesChartLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: TColors.primary, // <-- updated
+                      ),
+                    )
                   : viewModel.hasSalesChart
                       ? _buildLineChart(viewModel)
                       : Center(
@@ -862,7 +869,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: TColors.primary, // <-- ensure primary color
+                        ),
                       ),
                   ],
                 ),
@@ -871,7 +881,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ...viewModel.recentOrders!.recentOrders
                       .take(5)
                       .map((order) => _buildOrderItem(order))
-                      .toList()
                 else
                   const Padding(
                     padding: EdgeInsets.all(16.0),
@@ -1082,18 +1091,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: TColors.primary, // <-- ensure primary color
+                        ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 if (viewModel.hasTopProducts)
-                  ...viewModel.topProducts!.topProducts
-                      .asMap()
-                      .entries
-                      .map((entry) =>
-                          _buildTopProductItem(entry.key, entry.value))
-                      .toList()
+                  ...viewModel.topProducts!.topProducts.asMap().entries.map(
+                      (entry) => _buildTopProductItem(entry.key, entry.value))
                 else
                   const Padding(
                     padding: EdgeInsets.all(16.0),

@@ -321,6 +321,10 @@ class ProductViewModel extends ChangeNotifier {
 
         notifyListeners();
         debugPrint('Product updated successfully: ${updatedProduct.name}');
+
+        // Refresh the products list from the server
+        await _fetchProducts(isRefresh: true);
+
         return true;
       } else {
         _setError(result['error'] ?? 'Failed to update product');

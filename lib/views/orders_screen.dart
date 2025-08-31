@@ -270,7 +270,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(TColors.primary),
+          ),
           SizedBox(height: 16),
           Text('Chargement des commandes...'),
         ],
@@ -380,26 +382,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Navigate to products screen
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.inventory),
-                  label: const Text('Gérer les Produits'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: TColors.primary,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
                 OutlinedButton.icon(
                   onPressed: () {
                     _orderViewModel.refreshOrders();
@@ -629,7 +611,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(TColors.primary),
+                    ),
                   ),
                   SizedBox(width: 12),
                   Text('Chargement de plus de commandes...'),

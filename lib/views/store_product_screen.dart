@@ -247,7 +247,9 @@ class _StoreProductScreenState extends State<StoreProductScreen> {
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(TColors.primary),
+          ),
           SizedBox(height: 16),
           Text('Chargement des produits...'),
         ],
@@ -345,7 +347,7 @@ class _StoreProductScreenState extends State<StoreProductScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Vous n\'avez pas encore ajouté de produits à votre boutique.\nCommencez à construire votre catalogue en ajoutant votre premier produit.',
+                  'Commencez à construire votre catalogue en ajoutant vos produits.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -530,7 +532,11 @@ class _StoreProductScreenState extends State<StoreProductScreen> {
                   SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(TColors.primary),
+                    ),
                   ),
                   SizedBox(width: 12),
                   Text('Chargement de plus de produits...'),
@@ -589,14 +595,14 @@ class _StoreProductScreenState extends State<StoreProductScreen> {
               Navigator.pop(context);
               final success = await _productViewModel.deleteProduct(product.id);
               if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(this.context).showSnackBar(
                   SnackBar(
                     content: Text('${product.name} supprimé avec succès'),
                     backgroundColor: Colors.green,
                   ),
                 );
               } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(this.context).showSnackBar(
                   const SnackBar(
                     content: Text('Erreur lors de la suppression du produit'),
                     backgroundColor: Colors.red,
