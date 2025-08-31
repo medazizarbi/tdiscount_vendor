@@ -10,7 +10,6 @@ permissions:
   contents: write
   packages: read
 
-  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -61,13 +60,17 @@ jobs:
 
     - name: Get APK URL
       id: apk_url
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "APK_URL=$(jq -r '.[0].browser_download_url' <<< '${{ steps.create_release.outputs.assets }}')" >> $GITHUB_OUTPUT
+        APK_URL=$(gh release view "${{ github.run_number }}" --json assets | jq -r '.assets[0].url')
+        echo "APK_URL=$APK_URL" >> $GITHUB_OUTPUT
 
     - name: Install qrencode
       run: sudo apt-get update && sudo apt-get install -y qrencode
 
     - name: Generate QR code
+      id: generate_qr
       run: |
         qrencode -o qr-code.png -s 10 "${{ steps.apk_url.outputs.APK_URL }}"
         echo "QR_BASE64=$(base64 -w 0 qr-code.png)" >> $GITHUB_OUTPUT
@@ -83,7 +86,7 @@ jobs:
         to: ${{ secrets.RECIPIENT_EMAIL }}
         from: ${{ secrets.EMAIL_USERNAME }}
         html_body: |
-          <h2>New scount Vendor APK Release</h2>
+          <h2>New Tdiscount Vendor APK Release</h2>
           <p>Download the APK <a href="${{ steps.apk_url.outputs.APK_URL }}">here</a>.</p>
           <p>Scan the QR code below to download:</p>
           <img src="data:image/png;base64,${{ steps.generate_qr.outputs.QR_BASE64 }}" alt="QR Code">
