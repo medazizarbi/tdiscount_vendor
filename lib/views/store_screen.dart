@@ -17,15 +17,7 @@ class StoreScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          CustomSliverAppBar(
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings, color: TColors.black),
-                onPressed: () {
-                  // Handle settings
-                },
-              ),
-            ],
+          const CustomSliverAppBar(
             showThemeToggle: true,
             pinned: true,
             floating: false,
@@ -123,30 +115,6 @@ class StoreScreen extends StatelessWidget {
                                           const StoreProductScreen(),
                                     ),
                                   );
-                                },
-                              ),
-                              const Divider(height: 1),
-                              ListTile(
-                                leading: const Icon(Icons.analytics,
-                                    color: TColors.primary),
-                                title: const Text('Analyses'),
-                                subtitle: const Text(
-                                    'Voir les performances du magasin'),
-                                trailing: const Icon(Icons.arrow_forward_ios),
-                                onTap: () {
-                                  // Navigate to analytics page
-                                },
-                              ),
-                              const Divider(height: 1),
-                              ListTile(
-                                leading: const Icon(Icons.inventory_2,
-                                    color: TColors.primary),
-                                title: const Text('Inventaire'),
-                                subtitle:
-                                    const Text('Suivre les niveaux de stock'),
-                                trailing: const Icon(Icons.arrow_forward_ios),
-                                onTap: () {
-                                  // Navigate to inventory page
                                 },
                               ),
                               const Divider(height: 1),
