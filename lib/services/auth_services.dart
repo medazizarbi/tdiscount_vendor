@@ -28,6 +28,7 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    print('🔑 Attempting login for email: $email');
     try {
       final response = await http.post(
         Uri.parse(loginUrl),
@@ -37,31 +38,31 @@ class AuthService {
           'password': password,
         }),
       );
+      print('🔑 Login response status: ${response.statusCode}');
+      print('🔑 Login response body: ${response.body}');
 
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Store login data on successful login
+        print('✅ Login successful, storing login data...');
         await _storeLoginData(responseData);
 
-        // Check if vendor has a store after successful login
         print('🏪 Checking if vendor has a store after login...');
         final storeResult = await _storeService.getStore();
         print('🏪 Store check result: $storeResult');
 
-        // Success - include store information in response
         return {
           'success': true,
           'data': responseData,
           'message': responseData['message'] ?? 'Login successful',
           'storeInfo': {
-            'hasStore':
-                storeResult['hasStore'] ?? false, // Make sure this is correct
-            'data': storeResult['data'], // This contains the store data
+            'hasStore': storeResult['hasStore'] ?? false,
+            'data': storeResult['data'],
           },
         };
       } else {
-        // Error from server
+        print('❌ Login failed: ${responseData['message']}');
+        print('❌ Login errors: ${responseData['errors']}');
         return {
           'success': false,
           'data': null,
@@ -70,7 +71,7 @@ class AuthService {
         };
       }
     } catch (e) {
-      // Network or other error
+      print('🚨 Login error: $e');
       return {
         'success': false,
         'data': null,
@@ -86,6 +87,7 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    print('📝 Attempting registration for email: $email');
     try {
       final response = await http.post(
         Uri.parse(registerUrl),
@@ -96,19 +98,19 @@ class AuthService {
           'password': password,
         }),
       );
+      print('📝 Registration response status: ${response.statusCode}');
+      print('📝 Registration response body: ${response.body}');
 
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Store data on successful registration
+        print('✅ Registration successful, storing registration data...');
         await _storeRegistrationData(responseData);
 
-        // Check if vendor has a store after successful registration
         print('🏪 Checking if vendor has a store after registration...');
         final storeResult = await _storeService.getStore();
         print('🏪 Store check result: $storeResult');
 
-        // Success - include store information in response
         return {
           'success': true,
           'data': responseData,
@@ -119,7 +121,8 @@ class AuthService {
           },
         };
       } else {
-        // Error from server
+        print('❌ Registration failed: ${responseData['message']}');
+        print('❌ Registration errors: ${responseData['errors']}');
         return {
           'success': false,
           'data': null,
@@ -128,7 +131,7 @@ class AuthService {
         };
       }
     } catch (e) {
-      // Network or other error
+      print('🚨 Registration error: $e');
       return {
         'success': false,
         'data': null,

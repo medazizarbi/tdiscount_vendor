@@ -203,7 +203,7 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
           SliverToBoxAdapter(
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(10.0),
                 child: Center(
                   child: SingleChildScrollView(
                     child: Form(
@@ -214,15 +214,56 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
                           const SizedBox(height: 25),
 
                           // Title
-                          Text(
-                            'Modifier le Magasin',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: themedColor(context, TColors.textPrimary,
-                                  TColors.textWhite),
+                          Padding(
+                            padding: const EdgeInsets.all(
+                                8.0), // 8px padding from edges
+                            child: Container(
+                              width: double.infinity, // Expand to full width
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20.0, vertical: 12.0),
+                              decoration: BoxDecoration(
+                                color: themedColor(
+                                  context,
+                                  TColors.lightContainer,
+                                  TColors.carddark,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: themedColor(
+                                      context,
+                                      TColors.black.withOpacity(0.5),
+                                      TColors.white.withOpacity(0.3),
+                                    ),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color: themedColor(
+                                    context,
+                                    TColors.borderPrimary,
+                                    TColors.darkerGrey,
+                                  ),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Modifier le Magasin',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: themedColor(
+                                      context,
+                                      TColors.textPrimary,
+                                      TColors.textWhite,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
 
                           const SizedBox(height: 10),
@@ -396,7 +437,7 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
                             child: TextButton(
                               onPressed: () => Navigator.pop(context),
                               style: TextButton.styleFrom(
-                                foregroundColor: Colors.black,
+                                foregroundColor: Colors.white,
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(

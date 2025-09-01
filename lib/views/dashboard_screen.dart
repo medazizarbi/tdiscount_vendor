@@ -38,8 +38,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
                 showThemeToggle: true,
-                pinned: true,
-                floating: false,
+                pinned: false,
+                floating: true,
                 snap: false,
               ),
               SliverToBoxAdapter(
@@ -187,20 +187,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildPeriodSelector(DashboardViewModel viewModel) {
+    final scrollController = ScrollController();
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Icon(Icons.date_range, color: TColors.primary),
-            const SizedBox(width: 12),
-            const Text(
-              'Période:',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            // Centered title with icon
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.date_range, color: TColors.primary),
+                SizedBox(width: 8),
+                Text(
+                  'Période :',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
+            const SizedBox(height: 16),
+            // Chips row
+            SizedBox(
+              height: 40,
               child: SingleChildScrollView(
+                controller: scrollController,
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: viewModel.availablePeriods.map((period) {

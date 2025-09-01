@@ -89,7 +89,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: themedColor(
-                          context, TColors.textPrimary, TColors.textSecondary),
+                          context, TColors.textPrimary, TColors.textWhite),
                     ),
                   ),
                   const SizedBox(height: 16),

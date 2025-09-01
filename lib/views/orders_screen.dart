@@ -227,8 +227,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ),
             ],
             showThemeToggle: true,
-            pinned: true,
-            floating: false,
+            pinned: false,
+            floating: true,
             snap: false,
           ),
           SliverToBoxAdapter(
