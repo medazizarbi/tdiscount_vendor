@@ -86,7 +86,7 @@ class MyApp extends StatelessWidget {
             useMaterial3: true,
           ),
           // Navigate based on login status
-          home: isLoggedIn ? const MyHomePage() : const LoginScreen(),
+          home: isLoggedIn ? MyHomePage(key: homePageKey) : const LoginScreen(),
         );
       },
     );

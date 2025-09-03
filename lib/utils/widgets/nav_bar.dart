@@ -38,7 +38,7 @@ class NavBarState extends State<NavBar> {
                   ? Icons.dashboard
                   : Icons.dashboard_outlined,
             ),
-            label: 'Dashboard',
+            label: 'Tableau de bord',
           ),
           BottomNavigationBarItem(
             icon: Icon(
@@ -46,15 +46,13 @@ class NavBarState extends State<NavBar> {
                   ? Icons.receipt_long
                   : Icons.receipt_long_outlined,
             ),
-            label: 'Orders',
+            label: 'Commandes',
           ),
           BottomNavigationBarItem(
             icon: Icon(
-              widget.selectedIndex == 2
-                  ? Icons.store
-                  : Icons.store_outlined,
+              widget.selectedIndex == 2 ? Icons.store : Icons.store_outlined,
             ),
-            label: 'My Store',
+            label: 'magasin',
           ),
         ],
         selectedItemColor: Colors.teal, // Selected item color

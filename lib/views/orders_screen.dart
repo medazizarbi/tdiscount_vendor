@@ -5,6 +5,8 @@ import '../utils/widgets/custom_app_bar.dart';
 import '../utils/widgets/screen_container.dart';
 import '../utils/widgets/order_card.dart';
 import '../viewmodels/order_viewmodel.dart';
+import '../viewmodels/store_viewmodel.dart';
+import 'create_store.dart';
 import 'order_detail_screen.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -215,51 +217,151 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          CustomSliverAppBar(
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.filter_list, color: TColors.black),
-                onPressed: _showFilterBottomSheet,
-              ),
-            ],
-            showThemeToggle: true,
-            pinned: false,
-            floating: true,
-            snap: false,
-          ),
-          SliverToBoxAdapter(
-            child: ScreenContainer(
-              title: 'Commandes',
-              child: Column(
-                children: [
-                  Consumer<OrderViewModel>(
-                    builder: (context, orderVM, child) {
-                      if (orderVM.isLoading && orderVM.orders.isEmpty) {
-                        return _buildLoadingState();
-                      }
+    return Consumer<StoreViewModel>(
+      builder: (context, storeViewModel, child) {
+        if (!storeViewModel.hasStore) {
+          // Vendor has no store: show message and create store button
+          return Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                const CustomSliverAppBar(
+                  title: 'Commandes',
+                  showThemeToggle: true,
+                  pinned: false,
+                  floating: true,
+                  snap: false,
+                ),
+                SliverToBoxAdapter(
+                  child: ScreenContainer(
+                    title: 'Commandes',
+                    child: Column(
+                      children: [
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.store_outlined,
+                                    size: 60, color: Colors.grey),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Aucun Magasin',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Vous n\'avez pas encore de magasin. Créez votre magasin pour commencer à recevoir des commandes.',
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const CreateStoreScreen(),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.add_business),
+                                  label: const Text('Créer un Magasin'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: TColors.primary,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              children: [
+                                Icon(Icons.info_outline,
+                                    size: 48, color: Colors.grey[400]),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Commencez votre voyage',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Créez votre magasin pour débloquer toutes les fonctionnalités et commencer à recevoir des commandes.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
 
-                      if (orderVM.error != null && orderVM.orders.isEmpty) {
-                        return _buildErrorState(
-                            _getUserFriendlyError(orderVM.error), orderVM);
-                      }
-
-                      if (orderVM.orders.isEmpty) {
-                        return _buildEmptyState();
-                      }
-
-                      return _buildOrdersList(orderVM);
-                    },
+        return Scaffold(
+          body: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              CustomSliverAppBar(
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.filter_list, color: TColors.black),
+                    onPressed: _showFilterBottomSheet,
                   ),
                 ],
+                showThemeToggle: true,
+                pinned: false,
+                floating: true,
+                snap: false,
               ),
-            ),
+              SliverToBoxAdapter(
+                child: ScreenContainer(
+                  title: 'Commandes',
+                  child: Column(
+                    children: [
+                      Consumer<OrderViewModel>(
+                        builder: (context, orderVM, child) {
+                          if (orderVM.isLoading && orderVM.orders.isEmpty) {
+                            return _buildLoadingState();
+                          }
+
+                          if (orderVM.error != null && orderVM.orders.isEmpty) {
+                            return _buildErrorState(
+                                _getUserFriendlyError(orderVM.error), orderVM);
+                          }
+
+                          if (orderVM.orders.isEmpty) {
+                            return _buildEmptyState();
+                          }
+
+                          return _buildOrdersList(orderVM);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

@@ -33,43 +33,38 @@ class StoreScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       // Store header info
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              Icon(
-                                  storeViewModel.hasStore
-                                      ? Icons.store
-                                      : Icons.store_outlined,
+                      // Store header info
+                      if (!storeViewModel.hasStore)
+                        Card(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? TColors.dark
+                              : Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              children: [
+                                const Icon(
+                                  Icons.store_outlined,
                                   size: 60,
-                                  color: storeViewModel.hasStore
-                                      ? TColors.primary
-                                      : Colors.grey),
-                              const SizedBox(height: 16),
-                              Text(
-                                storeViewModel.hasStore
-                                    ? 'Gestion du Magasin'
-                                    : 'Aucun Magasin',
-                                style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                storeViewModel.hasStore
-                                    ? 'Gérez vos produits, inventaire et paramètres du magasin.'
-                                    : 'Vous n\'avez pas encore de magasin. Créez votre magasin pour commencer à vendre vos produits.',
-                                textAlign: TextAlign.center,
-                              ),
-
-                              // Show Create Store button if no store
-                              if (!storeViewModel.hasStore) ...[
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Aucun Magasin',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Vous n\'avez pas encore de magasin. Créez votre magasin pour commencer à vendre vos produits.',
+                                  textAlign: TextAlign.center,
+                                ),
                                 const SizedBox(height: 16),
                                 ElevatedButton.icon(
                                   onPressed: storeViewModel.isLoading
                                       ? null
                                       : () {
-                                          // Navigate to create store screen
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
@@ -88,16 +83,112 @@ class StoreScreen extends StatelessWidget {
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+                        ),
+                      if (storeViewModel.hasStore &&
+                          storeViewModel.storeData != null) ...[
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? TColors.dark
+                                    : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Banner (only if exists)
+                              if (storeViewModel.storeData!.banner != null &&
+                                  storeViewModel.storeData!.banner!.isNotEmpty)
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(12),
+                                    topRight: Radius.circular(12),
+                                  ),
+                                  child: Image.network(
+                                    storeViewModel.storeData!.banner!,
+                                    width: double.infinity,
+                                    height: 120,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+
+                              // Add space if logo exists but banner does not
+                              if ((storeViewModel.storeData!.logo != null &&
+                                      storeViewModel
+                                          .storeData!.logo!.isNotEmpty) &&
+                                  (storeViewModel.storeData!.banner == null ||
+                                      storeViewModel
+                                          .storeData!.banner!.isEmpty))
+                                const SizedBox(height: 32),
+
+                              // Logo (only if exists)
+                              if (storeViewModel.storeData!.logo != null &&
+                                  storeViewModel.storeData!.logo!.isNotEmpty)
+                                Transform.translate(
+                                  offset: (storeViewModel.storeData!.banner !=
+                                              null &&
+                                          storeViewModel
+                                              .storeData!.banner!.isNotEmpty)
+                                      ? const Offset(0, -32)
+                                      : Offset.zero,
+                                  child: Align(
+                                    alignment: Alignment.center,
+                                    child: CircleAvatar(
+                                      radius: 40,
+                                      backgroundColor: Colors.white,
+                                      backgroundImage: NetworkImage(
+                                          storeViewModel.storeData!.logo!),
+                                    ),
+                                  ),
+                                ),
+
+                              const SizedBox(height: 12),
+                              // Store Name
+                              Text(
+                                storeViewModel.storeData!.name,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: themedColor(context,
+                                      TColors.textPrimary, TColors.textWhite),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // Store Description
+                              Text(
+                                storeViewModel.storeData!.description,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: themedColor(context,
+                                      TColors.textPrimary, TColors.textWhite),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
+                      ],
 
                       // Only show store options if user has a store
                       if (storeViewModel.hasStore) ...[
                         // Store options menu
                         Card(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? TColors.dark
+                              : Colors.white,
                           child: Column(
                             children: [
                               ListTile(
@@ -139,57 +230,6 @@ class StoreScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-
-                        // Quick stats - only show if user has a store
-                        const Row(
-                          children: [
-                            Expanded(
-                              child: Card(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: Column(
-                                    children: [
-                                      Icon(Icons.shopping_bag,
-                                          color: TColors.primary),
-                                      SizedBox(height: 8),
-                                      Text('Produits'),
-                                      Text(
-                                        '127',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Card(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: Column(
-                                    children: [
-                                      Icon(Icons.visibility,
-                                          color: TColors.primary),
-                                      SizedBox(height: 8),
-                                      Text('Vues'),
-                                      Text(
-                                        '1,532',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ] else ...[
                         // Show a placeholder card when no store exists
                         Card(

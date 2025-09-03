@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:tdiscount_vendor/main.dart';
+import 'package:tdiscount_vendor/views/store_product_screen.dart';
 import '../utils/constants/colors.dart';
 import '../utils/widgets/custom_app_bar.dart';
 import '../utils/widgets/screen_container.dart';
 import '../viewmodels/dashboard_viewmodel.dart';
+import '../viewmodels/store_viewmodel.dart';
+import 'create_store.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -25,68 +29,168 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Consumer<DashboardViewModel>(
-        builder: (context, viewModel, child) {
-          return CustomScrollView(
-            slivers: [
-              CustomSliverAppBar(
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: TColors.black),
-                    onPressed: () => viewModel.refreshDashboard(),
-                  ),
-                ],
-                showThemeToggle: true,
-                pinned: false,
-                floating: true,
-                snap: false,
-              ),
-              SliverToBoxAdapter(
-                child: ScreenContainer(
+    return Consumer<StoreViewModel>(
+      builder: (context, storeViewModel, child) {
+        if (!storeViewModel.hasStore) {
+          // Vendor has no store: show message and create store button
+          return Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                const CustomSliverAppBar(
                   title: 'Tableau de Bord',
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Error handling
-                      if (viewModel.hasError) _buildErrorWidget(viewModel),
-
-                      // Period Selector
-                      _buildPeriodSelector(viewModel),
-                      const SizedBox(height: 20),
-
-                      // Sales Analytics Section
-                      _buildSectionTitle('Analyses des Ventes'),
-                      const SizedBox(height: 12),
-                      _buildSalesAnalytics(viewModel),
-                      const SizedBox(height: 20),
-
-                      // Sales Chart Section
-                      _buildSectionTitle('Tendance des Ventes'),
-                      const SizedBox(height: 12),
-                      _buildSalesChart(viewModel),
-                      const SizedBox(height: 20),
-
-                      // Orders Section
-                      _buildSectionTitle('Aperçu des Commandes'),
-                      const SizedBox(height: 12),
-                      _buildOrdersSection(viewModel),
-                      const SizedBox(height: 20),
-
-                      // Products Section
-                      _buildSectionTitle('Performance des Produits'),
-                      const SizedBox(height: 12),
-                      _buildProductsSection(viewModel),
-
-                      const SizedBox(height: 50), // Bottom spacing
-                    ],
+                  showThemeToggle: true,
+                  pinned: false,
+                  floating: true,
+                  snap: false,
+                ),
+                SliverToBoxAdapter(
+                  child: ScreenContainer(
+                    title: 'Tableau de Bord',
+                    child: Column(
+                      children: [
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.store_outlined,
+                                    size: 60, color: Colors.grey),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Aucun Magasin',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Vous n\'avez pas encore de magasin. Créez votre magasin pour commencer à voir vos statistiques.',
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const CreateStoreScreen(),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.add_business),
+                                  label: const Text('Créer un Magasin'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: TColors.primary,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              children: [
+                                Icon(Icons.info_outline,
+                                    size: 48, color: Colors.grey[400]),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Commencez votre voyage',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Créez votre magasin pour débloquer toutes les fonctionnalités et commencer à suivre vos ventes et commandes.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
-        },
-      ),
+        }
+
+        return Scaffold(
+          body: Consumer<DashboardViewModel>(
+            builder: (context, viewModel, child) {
+              return CustomScrollView(
+                slivers: [
+                  CustomSliverAppBar(
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.refresh, color: TColors.black),
+                        onPressed: () => viewModel.refreshDashboard(),
+                      ),
+                    ],
+                    showThemeToggle: true,
+                    pinned: false,
+                    floating: true,
+                    snap: false,
+                  ),
+                  SliverToBoxAdapter(
+                    child: ScreenContainer(
+                      title: 'Tableau de Bord',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Error handling
+                          if (viewModel.hasError) _buildErrorWidget(viewModel),
+
+                          // Period Selector
+                          _buildPeriodSelector(viewModel),
+                          const SizedBox(height: 20),
+
+                          // Sales Analytics Section
+                          _buildSectionTitle('Analyses des Ventes'),
+                          const SizedBox(height: 12),
+                          _buildSalesAnalytics(viewModel),
+                          const SizedBox(height: 20),
+
+                          // Sales Chart Section
+                          _buildSectionTitle('Tendance des Ventes'),
+                          const SizedBox(height: 12),
+                          _buildSalesChart(viewModel),
+                          const SizedBox(height: 20),
+
+                          // Orders Section
+                          _buildSectionTitle('Aperçu des Commandes'),
+                          const SizedBox(height: 12),
+                          _buildOrdersSection(viewModel),
+                          const SizedBox(height: 20),
+
+                          // Products Section
+                          _buildSectionTitle('Performance des Produits'),
+                          const SizedBox(height: 12),
+                          _buildProductsSection(viewModel),
+
+                          const SizedBox(height: 50), // Bottom spacing
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -257,14 +361,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Theme.of(context).brightness == Brightness.dark
-            ? TColors.primary
-            : Colors.black,
+    return Center(
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? TColors.primary
+              : Colors.black,
+        ),
       ),
     );
   }
@@ -911,9 +1017,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () {
-                      // Navigate to orders screen
+                      MyHomePage.navigateTo(
+                          1); // Navigate to OrdersScreen via NavBar
                     },
-                    child: const Text('Voir Toutes les Commandes'),
+                    child: Text(
+                      'Voir Toutes les Commandes',
+                      style: TextStyle(
+                        color: themedColor(context, TColors.textPrimary,
+                            TColors.textSecondary),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1065,7 +1178,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: _buildProductStatCard(
-                'Actifs',
+                'Produits Actifs',
                 '${viewModel.activeProducts}',
                 Icons.check_circle,
                 Colors.green,
@@ -1074,7 +1187,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: _buildProductStatCard(
-                'Inactifs',
+                'Produits Inactifs',
                 '${viewModel.inactiveProducts}',
                 Icons.pause_circle,
                 Colors.red,
@@ -1132,9 +1245,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () {
-                      // Navigate to products screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const StoreProductScreen(),
+                        ),
+                      );
                     },
-                    child: const Text('Voir Tous les Produits'),
+                    child: Text(
+                      'Voir Tous les Produits',
+                      style: TextStyle(
+                        color: themedColor(context, TColors.textPrimary,
+                            TColors.textSecondary),
+                      ),
+                    ),
                   ),
                 ),
               ],

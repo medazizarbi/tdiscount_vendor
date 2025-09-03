@@ -328,6 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
 
+/*
                     // Forgot Password
                     GestureDetector(
                       onTap: () {
@@ -353,7 +354,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-
+*/
                     const SizedBox(height: 30),
 
                     // Divider
