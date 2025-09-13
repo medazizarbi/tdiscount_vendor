@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -189,43 +190,48 @@ class ProductService {
     }
   }
 
-  /// Add a new product
+  /// Add a new product with images (multipart)
   Future<Map<String, dynamic>> addProduct({
     required String name,
     required double price,
     required int stock,
     String? description,
     String? category,
-    List<String>? images,
-    String status = 'active', // Default to 'active', but can be overridden
+    List<File>? imageFiles, // <-- Use File for images
+    String status = 'active',
   }) async {
     try {
       final headers = await _getHeaders();
       final uri = Uri.parse('$baseUrl$productsEndpoint');
 
-      final body = json.encode({
-        'name': name,
-        'description': description,
-        'price': price,
-        'stock': stock,
-        'category': category,
-        'images': images ?? [],
-        'status': status, // This will be 'active' or 'inactive'
-      });
+      var request = http.MultipartRequest('POST', uri);
+      request.headers.addAll(headers);
 
-      debugPrint('Adding product: $body');
+      request.fields['name'] = name;
+      request.fields['price'] = price.toString();
+      request.fields['stock'] = stock.toString();
+      if (description != null) request.fields['description'] = description;
+      if (category != null) request.fields['category'] = category;
+      request.fields['status'] = status;
 
-      final response = await http.post(uri, headers: headers, body: body);
+      // Attach multiple images
+      if (imageFiles != null) {
+        for (var i = 0; i < imageFiles.length; i++) {
+          var image = imageFiles[i];
+          request.files
+              .add(await http.MultipartFile.fromPath('images', image.path));
+        }
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       print('Add product response status: ${response.statusCode}');
       print('Add product response body: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = json.decode(response.body);
-
-        // Handle the response structure - the product is nested under 'product' key
-        final productData = data['product'] ??
-            data; // Fallback to data if 'product' key doesn't exist
+        final productData = data['product'] ?? data;
         final product = Product.fromJson(productData);
 
         return {
@@ -233,26 +239,6 @@ class ProductService {
           'product': product,
           'message': data['message'] ?? 'Product added successfully',
         };
-      } else if (response.statusCode == 401) {
-        await _authService.logout();
-        return {
-          'success': false,
-          'error': 'Unauthorized. Please login again.',
-          'requiresAuth': true,
-        };
-      } else if (response.statusCode == 400) {
-        try {
-          final errorData = json.decode(response.body);
-          return {
-            'success': false,
-            'error': errorData['message'] ?? 'Invalid product data',
-          };
-        } catch (e) {
-          return {
-            'success': false,
-            'error': 'Invalid product data',
-          };
-        }
       } else {
         try {
           final errorData = json.decode(response.body);
@@ -276,7 +262,7 @@ class ProductService {
     }
   }
 
-  /// Update an existing product
+  /// Update an existing product with images (multipart)
   Future<Map<String, dynamic>> updateProduct({
     required String productId,
     String? name,
@@ -284,49 +270,44 @@ class ProductService {
     int? stock,
     String? description,
     String? category,
-    List<String>? images,
+    List<File>? imageFiles, // <-- Use File for images
     String? status,
   }) async {
     try {
       final headers = await _getHeaders();
       final uri = Uri.parse('$baseUrl$productsEndpoint/$productId');
 
-      // Only include non-null values in the update
-      final Map<String, dynamic> updateData = {};
-      if (name != null) updateData['name'] = name;
-      if (price != null) updateData['price'] = price;
-      if (stock != null) updateData['stock'] = stock;
-      if (description != null) updateData['description'] = description;
-      if (category != null) updateData['category'] = category;
-      if (images != null) updateData['images'] = images;
-      if (status != null) updateData['status'] = status;
+      var request = http.MultipartRequest('PUT', uri);
+      request.headers.addAll(headers);
 
-      final body = json.encode(updateData);
+      if (name != null) request.fields['name'] = name;
+      if (price != null) request.fields['price'] = price.toString();
+      if (stock != null) request.fields['stock'] = stock.toString();
+      if (description != null) request.fields['description'] = description;
+      if (category != null) request.fields['category'] = category;
+      if (status != null) request.fields['status'] = status;
 
-      debugPrint('Updating product $productId: $body');
+      // Attach multiple images
+      if (imageFiles != null) {
+        for (var i = 0; i < imageFiles.length; i++) {
+          var image = imageFiles[i];
+          request.files
+              .add(await http.MultipartFile.fromPath('images', image.path));
+        }
+      }
 
-      final response = await http.put(uri, headers: headers, body: body);
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('Update product response status: ${response.statusCode}');
+      debugPrint('Update product response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-
-        // Adjust based on your actual API response format for PUT
         final product = Product.fromJson(data);
         return {
           'success': true,
           'product': product,
-        };
-      } else if (response.statusCode == 401) {
-        await _authService.logout();
-        return {
-          'success': false,
-          'error': 'Unauthorized. Please login again.',
-          'requiresAuth': true,
-        };
-      } else if (response.statusCode == 404) {
-        return {
-          'success': false,
-          'error': 'Product not found',
         };
       } else {
         try {

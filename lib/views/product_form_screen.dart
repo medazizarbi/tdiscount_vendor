@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../utils/constants/colors.dart';
 import '../utils/widgets/custom_app_bar.dart';
 import '../utils/widgets/screen_container.dart';
@@ -32,9 +34,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
 
-  // Image URLs list
-  List<String> _imageUrls = [];
-  final _imageUrlController = TextEditingController();
+  // Images list (File)
+  List<File> _images = [];
 
   // Status selection
   String _selectedStatus = 'active';
@@ -81,7 +82,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _selectedCategory = 'Autre'; // Default fallback
     }
 
-    _imageUrls = List.from(product.images);
+    // For edit, you may want to show existing images as preview (from URLs)
+    // But you can't convert URLs to File, so just leave _images empty for edit
     _selectedStatus = product.status;
   }
 
@@ -268,7 +270,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         _buildStatusSelection(),
                         const SizedBox(height: 20),
 
-                        // Image URLs Section
+                        // Image Picker Section
                         _buildImageSection(),
                         const SizedBox(height: 24),
 
@@ -451,93 +453,66 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           ),
         ),
         const SizedBox(height: 8),
-
-        // Add Image URL Field
         Row(
           children: [
-            Expanded(
-              child: TextFormField(
-                controller: _imageUrlController,
-                decoration: InputDecoration(
-                  labelText: 'URL de l\'Image',
-                  hintText: 'https://exemple.com/image.jpg',
-                  prefixIcon: const Icon(Icons.image, color: TColors.primary),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: TColors.primary, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: themedColor(context,
-                      Colors.grey[50] ?? Colors.white, TColors.darkerGrey),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: _addImageUrl,
+            ElevatedButton.icon(
+              onPressed: _pickImages,
+              icon: const Icon(Icons.photo_library),
+              label: const Text('Choisir des images'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: TColors.primary,
                 foregroundColor: Colors.black,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-              child: const Text('Ajouter'),
             ),
+            const SizedBox(width: 8),
+            Text('${_images.length} sélectionnée(s)'),
           ],
         ),
         const SizedBox(height: 12),
-
-        // Display existing image URLs
-        if (_imageUrls.isNotEmpty) ...[
-          Container(
-            constraints: const BoxConstraints(maxHeight: 200),
+        if (_images.isNotEmpty)
+          SizedBox(
+            height: 100,
             child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _imageUrls.length,
+              scrollDirection: Axis.horizontal,
+              itemCount: _images.length,
               itemBuilder: (context, index) {
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        _imageUrls[index],
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: 50,
-                          height: 50,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.broken_image,
-                              color: Colors.grey),
+                return Stack(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          _images[index],
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
-                    title: Text(
-                      _imageUrls[index],
-                      style: const TextStyle(fontSize: 12),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () => _removeImage(index),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.7),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close,
+                              color: Colors.white, size: 20),
+                        ),
+                      ),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _removeImageUrl(index),
-                    ),
-                  ),
+                  ],
                 );
               },
             ),
-          ),
-        ] else ...[
+          )
+        else
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -548,14 +523,29 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             ),
             child: const Center(
               child: Text(
-                'Aucune image ajoutée',
+                'Aucune image sélectionnée',
                 style: TextStyle(color: Colors.grey),
               ),
             ),
           ),
-        ],
       ],
     );
+  }
+
+  Future<void> _pickImages() async {
+    final picker = ImagePicker();
+    final pickedFiles = await picker.pickMultiImage();
+    if (pickedFiles != null && pickedFiles.isNotEmpty) {
+      setState(() {
+        _images = pickedFiles.map((xfile) => File(xfile.path)).toList();
+      });
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _images.removeAt(index);
+    });
   }
 
   Widget _buildSubmitButton(ProductViewModel productVM) {
@@ -591,22 +581,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     );
   }
 
-  void _addImageUrl() {
-    final url = _imageUrlController.text.trim();
-    if (url.isNotEmpty && !_imageUrls.contains(url)) {
-      setState(() {
-        _imageUrls.add(url);
-        _imageUrlController.clear();
-      });
-    }
-  }
-
-  void _removeImageUrl(int index) {
-    setState(() {
-      _imageUrls.removeAt(index);
-    });
-  }
-
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -629,7 +603,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         price: price,
         stock: stock,
         category: _selectedCategory ?? widget.product!.category,
-        images: _imageUrls.isNotEmpty ? _imageUrls : widget.product!.images,
+        images: _images.isNotEmpty ? _images : null,
         status: _selectedStatus,
       );
     } else {
@@ -640,7 +614,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         price: price,
         stock: stock,
         category: _selectedCategory,
-        images: _imageUrls,
+        images: _images,
         status: _selectedStatus,
       );
     }
@@ -680,7 +654,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _descriptionController.dispose();
     _priceController.dispose();
     _stockController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/product.dart';
 import '../services/product_services.dart';
@@ -241,7 +242,7 @@ class ProductViewModel extends ChangeNotifier {
     required int stock,
     String? description,
     String? category,
-    List<String>? images,
+    List<File>? images, // <-- Change to List<File>
     String status = 'active',
   }) async {
     try {
@@ -254,12 +255,11 @@ class ProductViewModel extends ChangeNotifier {
         stock: stock,
         description: description,
         category: category,
-        images: images,
+        imageFiles: images, // <-- Pass as imageFiles
         status: status,
       );
 
       if (result['success'] == true) {
-        // Add the new product to the beginning of the list
         final newProduct = result['product'] as Product;
         _products.insert(0, newProduct);
         _totalProducts++;
@@ -288,7 +288,7 @@ class ProductViewModel extends ChangeNotifier {
     int? stock,
     String? description,
     String? category,
-    List<String>? images,
+    List<File>? images, // <-- Change to List<File>
     String? status,
   }) async {
     try {
@@ -302,27 +302,23 @@ class ProductViewModel extends ChangeNotifier {
         stock: stock,
         description: description,
         category: category,
-        images: images,
+        imageFiles: images, // <-- Pass as imageFiles
         status: status,
       );
 
       if (result['success'] == true) {
-        // Update the product in the local list
         final updatedProduct = result['product'] as Product;
         final index = _products.indexWhere((p) => p.id == productId);
         if (index != -1) {
           _products[index] = updatedProduct;
         }
 
-        // Update selected product if it's the same
         if (_selectedProduct?.id == productId) {
           _selectedProduct = updatedProduct;
         }
 
         notifyListeners();
         debugPrint('Product updated successfully: ${updatedProduct.name}');
-
-        // Refresh the products list from the server
         await _fetchProducts(isRefresh: true);
 
         return true;
