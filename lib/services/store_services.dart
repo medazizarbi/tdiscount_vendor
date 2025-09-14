@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,24 +36,44 @@ class StoreService {
   Future<Map<String, dynamic>> createStore({
     required String name,
     required String description,
-    String? logo,
-    String? banner,
+    File? logo,
+    File? banner,
     Map<String, String>? socialLinks,
   }) async {
     try {
-      final requestBody = {
-        'name': name,
-        'description': description,
-        if (logo != null) 'logo': logo,
-        if (banner != null) 'banner': banner,
-        if (socialLinks != null) 'socialLinks': socialLinks,
-      };
+      final uri = Uri.parse(storeUrl);
+      final headers = await this.headers;
 
-      final response = await http.post(
-        Uri.parse(storeUrl),
-        headers: await headers,
-        body: jsonEncode(requestBody),
-      );
+      var request = http.MultipartRequest('POST', uri);
+      request.headers.addAll(headers);
+
+      request.fields['name'] = name;
+      request.fields['description'] = description;
+
+      if (socialLinks != null) {
+        socialLinks.forEach((key, value) {
+          request.fields['socialLinks[$key]'] = value;
+        });
+      }
+
+      // Attach logo file if provided
+      if (logo != null) {
+        print('Attaching logo file: ${logo.path}');
+        request.files.add(await http.MultipartFile.fromPath('logo', logo.path));
+      }
+
+      // Attach banner file if provided
+      if (banner != null) {
+        print('Attaching banner file: ${banner.path}');
+        request.files
+            .add(await http.MultipartFile.fromPath('banner', banner.path));
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('Create store response status: ${response.statusCode}');
+      print('Create store response body: ${response.body}');
 
       final responseData = jsonDecode(response.body);
 
@@ -89,12 +110,12 @@ class StoreService {
     try {
       print('🏪 Starting get store process...');
       print('🔗 Store URL: $storeUrl');
-      
+
       final requestHeaders = await headers;
       print('📝 Request headers: $requestHeaders');
-      
+
       print('⏳ Sending HTTP GET request to get store...');
-      
+
       final response = await http.get(
         Uri.parse(storeUrl),
         headers: requestHeaders,
@@ -109,13 +130,13 @@ class StoreService {
 
       if (response.statusCode == 200) {
         print('✅ Get store successful!');
-        
+
         // Fix: Check for 'store' key instead of 'data'
         final storeData = responseData['store'];
         final hasStoreData = storeData != null;
         print('🏪 Vendor has store: $hasStoreData');
         print('📦 Store data: $storeData');
-        
+
         // Success
         final result = {
           'success': true,
@@ -127,7 +148,7 @@ class StoreService {
         return result;
       } else if (response.statusCode == 404) {
         print('📭 No store found for this vendor (404)');
-        
+
         // No store found
         final result = {
           'success': true,
@@ -139,7 +160,7 @@ class StoreService {
         return result;
       } else {
         print('❌ Get store failed with status: ${response.statusCode}');
-        
+
         // Error from server
         final result = {
           'success': false,
@@ -154,7 +175,7 @@ class StoreService {
     } catch (e) {
       print('🚨 Exception occurred during get store: $e');
       print('📍 Get store exception type: ${e.runtimeType}');
-      
+
       // Network or other error
       final result = {
         'success': false,
@@ -173,24 +194,44 @@ class StoreService {
     required String storeId,
     String? name,
     String? description,
-    String? logo,
-    String? banner,
+    File? logoFile, // Accept File for logo only
+    File? bannerFile, // Accept File for banner only
     Map<String, String>? socialLinks,
   }) async {
     try {
-      final requestBody = <String, dynamic>{};
+      final uri = Uri.parse('$storeUrl/$storeId');
+      final headers = await this.headers;
 
-      if (name != null) requestBody['name'] = name;
-      if (description != null) requestBody['description'] = description;
-      if (logo != null) requestBody['logo'] = logo;
-      if (banner != null) requestBody['banner'] = banner;
-      if (socialLinks != null) requestBody['socialLinks'] = socialLinks;
+      var request = http.MultipartRequest('PUT', uri);
+      request.headers.addAll(headers);
 
-      final response = await http.put(
-        Uri.parse('$storeUrl/$storeId'),
-        headers: await headers,
-        body: jsonEncode(requestBody),
-      );
+      if (name != null) request.fields['name'] = name;
+      if (description != null) request.fields['description'] = description;
+      if (socialLinks != null) {
+        socialLinks.forEach((key, value) {
+          request.fields['socialLinks[$key]'] = value;
+        });
+      }
+
+      // Attach logo file if provided
+      if (logoFile != null) {
+        print('Attaching logo file: ${logoFile.path}');
+        request.files
+            .add(await http.MultipartFile.fromPath('logo', logoFile.path));
+      }
+
+      // Attach banner file if provided
+      if (bannerFile != null) {
+        print('Attaching banner file: ${bannerFile.path}');
+        request.files
+            .add(await http.MultipartFile.fromPath('banner', bannerFile.path));
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('Update store response status: ${response.statusCode}');
+      print('Update store response body: ${response.body}');
 
       final responseData = jsonDecode(response.body);
 

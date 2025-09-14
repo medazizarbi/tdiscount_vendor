@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../viewmodels/store_viewmodel.dart';
 import '../utils/constants/colors.dart';
 import '../utils/widgets/custom_app_bar.dart';
@@ -15,11 +17,14 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _logoController = TextEditingController();
-  final _bannerController = TextEditingController();
   final _facebookController = TextEditingController();
   final _instagramController = TextEditingController();
   final _websiteController = TextEditingController();
+
+  File? _logoFile;
+  File? _bannerFile;
+  String? _existingLogoUrl;
+  String? _existingBannerUrl;
 
   @override
   void initState() {
@@ -34,10 +39,9 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
     if (storeData != null) {
       _nameController.text = storeData.name;
       _descriptionController.text = storeData.description;
-      _logoController.text = storeData.logo ?? '';
-      _bannerController.text = storeData.banner ?? '';
+      _existingLogoUrl = storeData.logo;
+      _existingBannerUrl = storeData.banner;
 
-      // Load social links if they exist
       if (storeData.socialLinks != null) {
         _facebookController.text = storeData.socialLinks?.facebook ?? '';
         _instagramController.text = storeData.socialLinks?.instagram ?? '';
@@ -50,19 +54,36 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _logoController.dispose();
-    _bannerController.dispose();
     _facebookController.dispose();
     _instagramController.dispose();
     _websiteController.dispose();
     super.dispose();
   }
 
-  // Helper function for themed colors
   Color themedColor(BuildContext context, Color lightColor, Color darkColor) {
     return Theme.of(context).brightness == Brightness.dark
         ? darkColor
         : lightColor;
+  }
+
+  Future<void> _pickLogoImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _logoFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> _pickBannerImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _bannerFile = File(pickedFile.path);
+      });
+    }
   }
 
   Future<void> _updateStore() async {
@@ -90,17 +111,12 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
     final success = await storeViewModel.updateStore(
       name: _nameController.text.trim(),
       description: _descriptionController.text.trim(),
-      logo: _logoController.text.trim().isEmpty
-          ? null
-          : _logoController.text.trim(),
-      banner: _bannerController.text.trim().isEmpty
-          ? null
-          : _bannerController.text.trim(),
+      logoFile: _logoFile,
+      bannerFile: _bannerFile,
       socialLinks: socialLinks,
     );
 
     if (success && mounted) {
-      // Show success message and navigate back
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Magasin mis à jour avec succès!'),
@@ -109,7 +125,6 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
       );
       Navigator.pop(context);
     } else if (mounted) {
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(storeViewModel.errorMessage ??
@@ -148,11 +163,8 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
       child: TextFormField(
         controller: controller,
         validator: validator,
-        minLines:
-            maxLines > 1 ? 3 : 1, // Start with 3 lines for multi-line fields
-        maxLines: maxLines > 1
-            ? null
-            : maxLines, // Allow unlimited expansion for multi-line
+        minLines: maxLines > 1 ? 3 : 1,
+        maxLines: maxLines > 1 ? null : maxLines,
         style: TextStyle(
           color: themedColor(context, TColors.textPrimary, TColors.textWhite),
         ),
@@ -188,6 +200,87 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
     );
   }
 
+  Widget _buildImagePicker({
+    required String label,
+    required File? imageFile,
+    required String? existingUrl,
+    required VoidCallback onPick,
+    required IconData icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center, // Center all content
+      children: [
+        Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color:
+                  themedColor(context, TColors.textPrimary, TColors.textWhite),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: ElevatedButton.icon(
+            onPressed: onPick,
+            icon: Icon(icon),
+            label: const Text('Choisir une image'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: TColors.primary,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: Text(
+            imageFile != null || (existingUrl != null && existingUrl.isNotEmpty)
+                ? '1 sélectionnée'
+                : 'Aucune sélectionnée',
+          ),
+        ),
+        if (imageFile != null ||
+            (existingUrl != null && existingUrl.isNotEmpty)) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: themedColor(context, Colors.grey[100] ?? Colors.white,
+                    TColors.darkerGrey),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: imageFile != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        imageFile,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        existingUrl!,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -215,10 +308,9 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
 
                           // Title
                           Padding(
-                            padding: const EdgeInsets.all(
-                                8.0), // 8px padding from edges
+                            padding: const EdgeInsets.all(8.0),
                             child: Container(
-                              width: double.infinity, // Expand to full width
+                              width: double.infinity,
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20.0, vertical: 12.0),
                               decoration: BoxDecoration(
@@ -311,22 +403,24 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
 
                           const SizedBox(height: 20),
 
-                          // Logo URL (Optional)
-                          _buildTextFormField(
-                            controller: _logoController,
-                            labelText: 'URL du logo',
-                            prefixIcon: Icons.image,
-                            hintText: 'https://exemple.com/logo.png',
+                          // Logo Image Picker + Existing Image
+                          _buildImagePicker(
+                            label: 'Logo du magasin',
+                            imageFile: _logoFile,
+                            existingUrl: _existingLogoUrl,
+                            onPick: _pickLogoImage,
+                            icon: Icons.image,
                           ),
 
                           const SizedBox(height: 20),
 
-                          // Banner URL (Optional)
-                          _buildTextFormField(
-                            controller: _bannerController,
-                            labelText: 'URL de la bannière',
-                            prefixIcon: Icons.panorama,
-                            hintText: 'https://exemple.com/banniere.png',
+                          // Banner Image Picker + Existing Image
+                          _buildImagePicker(
+                            label: 'Bannière du magasin',
+                            imageFile: _bannerFile,
+                            existingUrl: _existingBannerUrl,
+                            onPick: _pickBannerImage,
+                            icon: Icons.panorama,
                           ),
 
                           const SizedBox(height: 30),

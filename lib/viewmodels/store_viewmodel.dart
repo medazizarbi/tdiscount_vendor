@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/store.dart';
@@ -14,7 +15,7 @@ class StoreViewModel extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  bool get hasStore => _hasStore; // This is your global bool
+  bool get hasStore => _hasStore;
   StoreModel? get storeData => _storeData;
 
   void clearError() {
@@ -95,12 +96,12 @@ class StoreViewModel extends ChangeNotifier {
     }
   }
 
-  /// Create new store
+  /// Create new store (logo and banner as File)
   Future<bool> createStore({
     required String name,
     required String description,
-    String? logo,
-    String? banner,
+    File? logoFile,
+    File? bannerFile,
     Map<String, String>? socialLinks,
   }) async {
     try {
@@ -111,17 +112,15 @@ class StoreViewModel extends ChangeNotifier {
       final result = await _storeService.createStore(
         name: name,
         description: description,
-        logo: logo,
-        banner: banner,
+        logo: logoFile,
+        banner: bannerFile,
         socialLinks: socialLinks,
       );
 
       if (result['success'] == true) {
-        // Parse store data from response
         final storeJson = result['data']['store'] ?? result['data'];
         final newStore = StoreModel.fromJson(storeJson);
 
-        // Update state
         await setStoreState(hasStore: true, storeData: newStore);
 
         return true;
@@ -150,7 +149,6 @@ class StoreViewModel extends ChangeNotifier {
 
       if (result['success'] == true) {
         if (result['hasStore'] == true && result['data'] != null) {
-          // Parse store data
           final storeJson = result['data']['store'] ?? result['data'];
           final store = StoreModel.fromJson(storeJson);
 
@@ -175,12 +173,12 @@ class StoreViewModel extends ChangeNotifier {
     }
   }
 
-  /// Update existing store
+  /// Update existing store (logo and banner as File)
   Future<bool> updateStore({
     String? name,
     String? description,
-    String? logo,
-    String? banner,
+    File? logoFile,
+    File? bannerFile,
     Map<String, String>? socialLinks,
   }) async {
     if (_storeData == null) {
@@ -198,17 +196,15 @@ class StoreViewModel extends ChangeNotifier {
         storeId: _storeData!.id,
         name: name,
         description: description,
-        logo: logo,
-        banner: banner,
+        logoFile: logoFile,
+        bannerFile: bannerFile,
         socialLinks: socialLinks,
       );
 
       if (result['success'] == true) {
-        // Parse updated store data
         final storeJson = result['data']['store'] ?? result['data'];
         final updatedStore = StoreModel.fromJson(storeJson);
 
-        // Update state
         await setStoreState(hasStore: true, storeData: updatedStore);
 
         return true;
