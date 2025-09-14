@@ -37,6 +37,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   // Images list (File)
   List<File> _images = [];
 
+  // Existing image URLs (for edit mode)
+  List<String> _existingImageUrls = [];
+
   // Status selection
   String _selectedStatus = 'active';
 
@@ -82,9 +85,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _selectedCategory = 'Autre'; // Default fallback
     }
 
-    // For edit, you may want to show existing images as preview (from URLs)
-    // But you can't convert URLs to File, so just leave _images empty for edit
     _selectedStatus = product.status;
+
+    // Populate existing image URLs if available
+    _existingImageUrls = product.images;
   }
 
   Widget _buildCategoryDropdown() {
@@ -467,49 +471,67 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            Text('${_images.length} sélectionnée(s)'),
+            Text(
+                '${_images.length + _existingImageUrls.length} sélectionnée(s)'),
           ],
         ),
         const SizedBox(height: 12),
-        if (_images.isNotEmpty)
+        if (_images.isNotEmpty || _existingImageUrls.isNotEmpty)
           SizedBox(
             height: 100,
-            child: ListView.builder(
+            child: ListView(
               scrollDirection: Axis.horizontal,
-              itemCount: _images.length,
-              itemBuilder: (context, index) {
-                return Stack(
-                  children: [
-                    Container(
+              children: [
+                // Existing images from URLs
+                ..._existingImageUrls.map((url) => Container(
                       margin: const EdgeInsets.only(right: 8),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          _images[index],
+                        child: Image.network(
+                          url,
                           width: 100,
                           height: 100,
                           fit: BoxFit.cover,
                         ),
                       ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () => _removeImage(index),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.7),
-                            shape: BoxShape.circle,
+                    )),
+                // Newly picked images
+                ..._images.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  File image = entry.value;
+                  return Stack(
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            image,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
                           ),
-                          child: const Icon(Icons.close,
-                              color: Colors.white, size: 20),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () => _removeImage(index),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.7),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close,
+                                color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ],
             ),
           )
         else
@@ -535,7 +557,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   Future<void> _pickImages() async {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage();
-    if (pickedFiles != null && pickedFiles.isNotEmpty) {
+    if (pickedFiles.isNotEmpty) {
       setState(() {
         _images = pickedFiles.map((xfile) => File(xfile.path)).toList();
       });
