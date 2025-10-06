@@ -661,10 +661,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               getTitlesWidget: (double value, TitleMeta meta) {
                 final index = value.toInt();
                 if (index >= 0 && index < salesData.length) {
-                  final date = DateTime.parse(salesData[index].date);
+                  final dateStr = salesData[index].date;
+                  final date =
+                      _parseChartDate(dateStr, viewModel.selectedPeriod);
+                  if (date == null) return const Text('');
                   String displayText =
                       _getChartLabelText(date, viewModel.selectedPeriod);
-
                   return SideTitleWidget(
                     axisSide: meta.axisSide,
                     child: Transform.rotate(
@@ -776,7 +778,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 final index = barSpot.x.toInt();
                 if (index >= 0 && index < salesData.length) {
                   final data = salesData[index];
-                  final date = DateTime.parse(data.date);
+                  final date =
+                      _parseChartDate(data.date, viewModel.selectedPeriod);
+                  if (date == null) return null;
                   return LineTooltipItem(
                     '📅 ${_formatTooltipDate(date, viewModel.selectedPeriod)}\n',
                     TextStyle(
@@ -1382,5 +1386,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
       default:
         return 'points';
     }
+  }
+
+  DateTime? _parseChartDate(String dateStr, String period) {
+    try {
+      switch (period) {
+        case 'year':
+          // "YYYY-MM"
+          final parts = dateStr.split('-');
+          if (parts.length == 2) {
+            return DateTime(int.parse(parts[0]), int.parse(parts[1]));
+          }
+          break;
+        case 'month':
+        case 'week':
+        case 'day':
+          // ISO format or full date
+          return DateTime.parse(dateStr);
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
   }
 }

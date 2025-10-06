@@ -388,29 +388,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            // Product Image Placeholder
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: product?.images.isNotEmpty == true
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        product!.images.first,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.image, color: Colors.grey);
-                        },
-                      ),
-                    )
-                  : const Icon(Icons.image, color: Colors.grey),
-            ),
-            const SizedBox(width: 12),
-
             // Product Details
             Expanded(
               child: Column(
