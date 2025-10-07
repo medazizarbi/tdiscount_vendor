@@ -554,7 +554,7 @@ class _StoreProductScreenState extends State<StoreProductScreen> {
             ),
           ],
 
-          const SizedBox(height: 100),
+          const SizedBox(height: 24),
         ],
       ),
     );

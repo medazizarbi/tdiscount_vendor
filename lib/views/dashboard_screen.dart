@@ -180,7 +180,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(height: 12),
                           _buildProductsSection(viewModel),
 
-                          const SizedBox(height: 50), // Bottom spacing
+                          const SizedBox(height: 15), // Bottom spacing
                         ],
                       ),
                     ),

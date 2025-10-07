@@ -735,7 +735,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ),
           ],
 
-          const SizedBox(height: 100),
+          const SizedBox(height: 20),
         ],
       ),
     );

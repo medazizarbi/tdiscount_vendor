@@ -296,7 +296,7 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
           SliverToBoxAdapter(
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.all(1.0),
                 child: Center(
                   child: SingleChildScrollView(
                     child: Form(
@@ -304,7 +304,7 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const SizedBox(height: 25),
+                          const SizedBox(height: 1),
 
                           // Title
                           Padding(

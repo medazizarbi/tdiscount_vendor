@@ -580,7 +580,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           foregroundColor: Colors.black,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(25),
           ),
         ),
         child: productVM.isLoading
